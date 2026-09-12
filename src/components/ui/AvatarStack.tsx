@@ -28,6 +28,7 @@ export default function AvatarStack({
               lastName={r.lastName}
               size={size}
               ring={ring}
+              letters="first"
             />
           </span>
         );

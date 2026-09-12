@@ -117,6 +117,28 @@ export function lapsedCount(residentId: string): number {
   return (lapsedSchedule[residentId] ?? []).length;
 }
 
+const DAY_NAMES = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+] as const;
+
+export function dayNameOf(date: Date): string {
+  return DAY_NAMES[date.getDay()];
+}
+
+/** Events running on a given weekday, including daily standing ones. */
+export function eventsOn(day: string): SocialEvent[] {
+  return events.filter((e) => {
+    const d = e.startTime.split(" ")[0];
+    return d === day || d === "Daily";
+  });
+}
+
 export interface Attendee {
   residentId: string;
   /** They used to come and have stopped — shown, but not counted as going. */

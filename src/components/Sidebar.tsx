@@ -8,7 +8,8 @@ import AccessGate from "./AccessGate";
 // Every item here is a real page. No placeholder nav — a judge who
 // clicks one during the demo has to land somewhere.
 const NAV = [
-  { href: "/", label: "Residents" },
+  { href: "/", label: "Today" },
+  { href: "/residents", label: "Residents" },
   { href: "/activities", label: "Activities" },
 ];
 
@@ -31,7 +32,7 @@ export default function Sidebar() {
           {NAV.map((item) => {
             const active =
               item.href === "/"
-                ? pathname === "/" || pathname.startsWith("/residents")
+                ? pathname === "/"
                 : pathname.startsWith(item.href);
             return (
               <Link

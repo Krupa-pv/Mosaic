@@ -1,88 +1,93 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { createStore } from "./localStore";
 
 // ============================================================
-// Accepted prescriptions, remembered across navigation.
+// Accepted prescriptions, and the outcomes staff log against them.
 //
-// §4 rules out a database, so this is localStorage — enough that
-// accepting Margaret into Garden Circle and then opening the Garden
-// Circle page shows her on the roster, instead of the demo quietly
-// contradicting itself. Every access is guarded: private windows and
-// blocked site data must not break the page.
+// The outcome half is §2's stage 5 — the feedback loop the design doc
+// says to describe verbally. One tap is cheap enough to actually build,
+// and it makes the claim demonstrable instead of promised.
 // ============================================================
-
-const KEY = "mosaic.accepted.v1";
 
 export interface AcceptedEntry {
   eventId: string;
   residentId: string;
+  /** Epoch ms, so "was this today?" is answerable. */
+  at: number;
 }
 
-const listeners = new Set<() => void>();
-let cache: AcceptedEntry[] = [];
-let cacheRaw: string | null = null;
+export type Outcome = "went_well" | "did_not_happen" | "follow_up";
 
-function read(): AcceptedEntry[] {
-  try {
-    const raw = localStorage.getItem(KEY);
-    // Cache by raw string so useSyncExternalStore gets a stable reference.
-    if (raw !== cacheRaw) {
-      cacheRaw = raw;
-      cache = raw ? (JSON.parse(raw) as AcceptedEntry[]) : [];
-    }
-    return cache;
-  } catch {
-    return [];
-  }
+export interface OutcomeEntry {
+  eventId: string;
+  residentId: string;
+  outcome: Outcome;
+  note?: string;
+  at: number;
 }
 
-function emit() {
-  listeners.forEach((l) => l());
-}
+const acceptedStore = createStore<AcceptedEntry>("mosaic.accepted.v1");
+const outcomeStore = createStore<OutcomeEntry>("mosaic.outcomes.v1");
+
+export const OUTCOME_LABELS: Record<Outcome, string> = {
+  went_well: "Went well",
+  did_not_happen: "Didn't happen",
+  follow_up: "Needs follow-up",
+};
+
+/* ---------- accepted ---------- */
 
 export function recordAccepted(eventId: string, residentIds: string[]) {
-  try {
-    const next = [...read()];
-    for (const residentId of residentIds) {
-      if (!next.some((e) => e.eventId === eventId && e.residentId === residentId)) {
-        next.push({ eventId, residentId });
-      }
+  const next = [...acceptedStore.read()];
+  for (const residentId of residentIds) {
+    if (!next.some((e) => e.eventId === eventId && e.residentId === residentId)) {
+      next.push({ eventId, residentId, at: Date.now() });
     }
-    localStorage.setItem(KEY, JSON.stringify(next));
-  } catch {
-    // Storage unavailable — the current page still renders correctly from
-    // its own state; only cross-page memory is lost.
   }
-  emit();
+  acceptedStore.write(next);
+}
+
+export function removeAccepted(eventId: string, residentId: string) {
+  acceptedStore.write(
+    acceptedStore
+      .read()
+      .filter((e) => !(e.eventId === eventId && e.residentId === residentId))
+  );
 }
 
 export function clearAccepted() {
-  try {
-    localStorage.removeItem(KEY);
-  } catch {
-    /* no-op */
-  }
-  emit();
+  acceptedStore.clear();
+  outcomeStore.clear();
 }
 
-function subscribe(cb: () => void) {
-  listeners.add(cb);
-  window.addEventListener("storage", cb);
-  return () => {
-    listeners.delete(cb);
-    window.removeEventListener("storage", cb);
-  };
-}
-
-const EMPTY: AcceptedEntry[] = [];
-
-/** Reads as empty during SSR so server and first client render agree. */
+/** Resident ids added to this event during the session. */
 export function useAccepted(eventId: string): string[] {
-  const all = useSyncExternalStore(
-    subscribe,
-    read,
-    () => EMPTY
-  );
-  return all.filter((e) => e.eventId === eventId).map((e) => e.residentId);
+  return acceptedStore
+    .useAll()
+    .filter((e) => e.eventId === eventId)
+    .map((e) => e.residentId);
+}
+
+export function useAllAccepted(): AcceptedEntry[] {
+  return acceptedStore.useAll();
+}
+
+/* ---------- outcomes ---------- */
+
+export function recordOutcome(
+  eventId: string,
+  residentId: string,
+  outcome: Outcome,
+  note?: string
+) {
+  const next = outcomeStore
+    .read()
+    .filter((e) => !(e.eventId === eventId && e.residentId === residentId));
+  next.push({ eventId, residentId, outcome, note, at: Date.now() });
+  outcomeStore.write(next);
+}
+
+export function useOutcomes(): OutcomeEntry[] {
+  return outcomeStore.useAll();
 }

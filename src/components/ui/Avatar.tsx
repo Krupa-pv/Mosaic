@@ -32,6 +32,8 @@ export default function Avatar({
   size = "sm",
   ring = "none",
   tone = "neutral",
+  /** Stacks overlap their neighbour, which clips a second character. */
+  letters = "both",
   className = "",
 }: {
   residentId?: string;
@@ -40,6 +42,7 @@ export default function Avatar({
   size?: AvatarSize;
   ring?: keyof typeof RINGS;
   tone?: "neutral" | "accent";
+  letters?: "both" | "first";
   className?: string;
 }) {
   const [failed, setFailed] = useState(false);
@@ -75,7 +78,9 @@ export default function Avatar({
       aria-label={label}
       role="img"
     >
-      {initials(firstName, lastName)}
+      {letters === "first"
+        ? firstName[0]?.toUpperCase()
+        : initials(firstName, lastName)}
     </span>
   );
 }

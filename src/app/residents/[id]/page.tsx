@@ -34,7 +34,7 @@ export default async function ResidentPage({
   return (
     <div className="mx-auto max-w-5xl px-5 py-10 sm:px-10 sm:py-14">
       <Link
-        href="/"
+        href="/residents"
         className="text-[12.5px] text-muted transition hover:text-accent"
       >
         ← Roster
