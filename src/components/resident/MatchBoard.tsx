@@ -1,9 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Ban, Check, SlidersHorizontal } from "lucide-react";
+import { Ban, Check, SlidersHorizontal, Sparkles } from "lucide-react";
 import type { MatchCandidate } from "@/lib/api";
 import { findResident } from "@/lib/roster";
+import { usePairHistory } from "@/lib/history";
 import { HEX } from "@/lib/ui";
 import Avatar from "../ui/Avatar";
 import RiskBadge from "../ui/RiskBadge";
@@ -28,14 +29,17 @@ const FILTERS: { key: FilterKey; label: string }[] = [
 export default function MatchBoard({
   candidates,
   selectedId,
+  subjectId,
   subjectInterests,
   onChoose,
 }: {
   candidates: MatchCandidate[];
   selectedId: string;
+  subjectId: string;
   subjectInterests: string[];
   onChoose: (residentId: string) => void;
 }) {
+  const history = usePairHistory(subjectId);
   const [filter, setFilter] = useState<FilterKey>("all");
   const [showAll, setShowAll] = useState(false);
 
@@ -65,8 +69,21 @@ export default function MatchBoard({
     });
   }, [eligible, filter, subjectInterests]);
 
-  const top = shown.slice(0, 3);
-  const rest = shown.slice(3);
+  // A pairing that has already worked is promoted above equally-scored
+  // strangers. The score itself is untouched — this only changes order.
+  const ranked = useMemo(
+    () =>
+      [...shown].sort((a, b) => {
+        const aw = history.get(a.residentId)?.wentWell ?? 0;
+        const bw = history.get(b.residentId)?.wentWell ?? 0;
+        if (aw !== bw) return bw - aw;
+        return b.score - a.score;
+      }),
+    [shown, history]
+  );
+
+  const top = ranked.slice(0, 3);
+  const rest = ranked.slice(3);
 
   return (
     <div className="mt-6">
@@ -111,6 +128,7 @@ export default function MatchBoard({
               rank={i + 1}
               selected={c.residentId === selectedId}
               subjectInterests={subjectInterests}
+              worked={history.get(c.residentId)?.wentWell ?? 0}
               onChoose={onChoose}
             />
           ))}
@@ -190,12 +208,15 @@ function BigCard({
   rank,
   selected,
   subjectInterests,
+  worked,
   onChoose,
 }: {
   candidate: MatchCandidate;
   rank: number;
   selected: boolean;
   subjectInterests: string[];
+  /** Sessions this pair has already had that went well. */
+  worked: number;
   onChoose: (id: string) => void;
 }) {
   const r = findResident(candidate.residentId);
@@ -253,6 +274,13 @@ function BigCard({
             </div>
           ))}
         </dl>
+      )}
+
+      {worked > 0 && (
+        <p className="mt-3.5 flex items-center gap-1.5 rounded-lg bg-low-soft px-3 py-2 text-caption font-medium text-low">
+          <Sparkles aria-hidden className="h-3.5 w-3.5" strokeWidth={2} />
+          Worked well {worked === 1 ? "once" : `${worked} times`} before
+        </p>
       )}
 
       {shared.length > 0 && (

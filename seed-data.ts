@@ -21,7 +21,7 @@ export const residents: Resident[] = [
       "Social event attendance down 64% over 3 weeks",
       "Meals eaten in shared dining down 41%",
       "Staff notes increasingly mention withdrawal",
-      "Family visits remain unchanged",
+      "Family visits down from weekly to roughly monthly",
     ],
   },
   {
@@ -201,6 +201,15 @@ export const events: SocialEvent[] = [
     location: "Dining Room",
     interests: ["socializing"],
     groupSize: "large",
+    accessibility: { wheelchairAccessible: true, seatedAvailable: true, physicalIntensity: "low" },
+  },
+  {
+    id: "shared-lunch",
+    title: "Shared Lunch",
+    startTime: "Daily 12:30 PM",
+    location: "Dining Room",
+    interests: ["socializing"],
+    groupSize: "small",
     accessibility: { wheelchairAccessible: true, seatedAvailable: true, physicalIntensity: "low" },
   },
   {

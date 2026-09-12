@@ -62,6 +62,7 @@ export default function PairStep() {
         <MatchBoard
           candidates={r.candidates}
           selectedId={r.match.residentBId}
+          subjectId={r.residentId}
           subjectInterests={r.merged.interests}
           onChoose={(id) => a.runMatch(id)}
         />

@@ -151,13 +151,13 @@ export function interventionsFor(
         title: "Call the family",
         because: factor(f, /family/i, "Family contact is flat"),
         detail:
-          "Visits haven't dropped, but they haven't risen either. The family likely doesn't know anything has changed.",
+          "Visits have thinned out. The family almost certainly doesn't know anything has changed — they hear from her less too.",
         effort: "10 min",
       },
       66,
       [
         [urgent ? 8 : 0, "Risk has moved sharply enough that the family should hear it from you first."],
-        [4, "Family contact is the one lever that keeps working when they're not leaving the room."],
+        [8, "Family contact is the one lever that keeps working when they are not leaving the room, and it is the signal falling fastest here."],
       ]
     );
   }

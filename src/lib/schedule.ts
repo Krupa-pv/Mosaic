@@ -21,6 +21,7 @@ const baseSchedule: Record<string, string[]> = {
   helen: [
     "garden-circle",
     "shared-breakfast",
+    "shared-lunch",
     "morning-walk",
     "trivia",
     "book-club",
@@ -32,12 +33,12 @@ const baseSchedule: Record<string, string[]> = {
   robert: ["painting"],
   dorothy: ["shared-breakfast"],
   arthur: ["shared-breakfast", "trivia"],
-  frances: ["shared-breakfast", "book-club", "cooking-demo"],
-  beatrice: ["shared-breakfast", "trivia", "painting", "cooking-demo"],
+  frances: ["shared-breakfast", "shared-lunch", "book-club", "cooking-demo"],
+  beatrice: ["shared-breakfast", "shared-lunch", "trivia", "painting", "cooking-demo"],
   walter: ["morning-walk", "jazz-hour"],
   yolanda: ["shared-breakfast", "book-club", "trivia", "painting"],
   samuel: ["shared-breakfast", "morning-walk", "trivia"],
-  irene: ["shared-breakfast", "book-club", "morning-walk", "garden-circle"],
+  irene: ["shared-breakfast", "shared-lunch", "book-club", "morning-walk", "garden-circle"],
 };
 
 // What Margaret has stopped attending. §3: she was at 3 events/week and
@@ -47,7 +48,7 @@ const baseSchedule: Record<string, string[]> = {
 //   cooking-demo    <- care plan, "previously participated in cooking groups"
 //   shared-breakfast <- risk factor, "meals in shared dining down 41%"
 const lapsedSchedule: Record<string, string[]> = {
-  margaret: ["cooking-demo", "shared-breakfast"],
+  margaret: ["cooking-demo", "shared-breakfast", "shared-lunch"],
   // Her risk factor reads "stopped attending weekly music group".
   dorothy: ["jazz-hour"],
 };
