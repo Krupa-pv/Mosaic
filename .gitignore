@@ -1,0 +1,12 @@
+node_modules/
+.next/
+out/
+dist/
+
+# Local secrets — never commit
+.env
+.env.local
+.env*.local
+
+.DS_Store
+*.log
