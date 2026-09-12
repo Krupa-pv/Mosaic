@@ -64,6 +64,31 @@ a large fill except in an alert bar.
 
 ---
 
+## 2b. The mark
+
+Four rounded tiles in a 2x2 grid: three evergreen, one brick, with the two
+diagonal tiles at 42% opacity. A mosaic, and a stand-in for the residents the
+product is trying to fit together. The single brick tile is the resident at
+risk — it is the whole product in one shape, so do not recolour it.
+
+Files, both 24x24 viewBox scaled to 512px:
+
+| File | Use |
+|---|---|
+| `public/mosaic-mark.svg` | Transparent. Preferred — scales cleanly. |
+| `public/mosaic-mark.png` | Transparent, for tools that reject SVG. |
+| `public/mosaic-mark-on-paper.svg` | Rounded paper tile behind it, for avatars and favicons. |
+| `public/mosaic-mark-on-paper.png` | Same, raster. |
+
+Geometry, if it has to be rebuilt: on a 24x24 canvas, four 9.5x9.5 rects with
+2.5 corner radius at (1,1), (13.5,1), (1,13.5) and (13.5,13.5). Top-left
+`#0f6b4f` full opacity, top-right and bottom-left `#0f6b4f` at 0.42,
+bottom-right `#c23b1c` full opacity.
+
+Pair it with the wordmark "Mosaic" set in Fraunces, weight 500.
+
+---
+
 ## 3. Type
 
 Three families, all on Google Fonts.
