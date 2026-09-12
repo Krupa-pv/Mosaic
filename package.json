@@ -10,9 +10,11 @@
     "probe": "tsx scripts/probe-azure.ts",
     "verify:matching": "tsx scripts/verify-matching.ts",
     "verify:ai": "tsx scripts/verify-ai.ts",
-    "verify:demo": "tsx scripts/verify-demo.ts"
+    "verify:demo": "tsx scripts/verify-demo.ts",
+    "test:webhook": "tsx scripts/test-whop-webhook.ts"
   },
   "dependencies": {
+    "@whop/sdk": "^1.1.4",
     "d3-force": "^3.0.0",
     "lucide-react": "^1.45.0",
     "next": "16.3.5",
