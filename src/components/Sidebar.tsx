@@ -10,6 +10,7 @@ import AccessGate from "./AccessGate";
 const NAV = [
   { href: "/", label: "Today" },
   { href: "/residents", label: "Residents" },
+  { href: "/connections", label: "Connections" },
   { href: "/activities", label: "Activities" },
 ];
 

@@ -13,6 +13,7 @@
     "verify:demo": "tsx scripts/verify-demo.ts"
   },
   "dependencies": {
+    "d3-force": "^3.0.0",
     "lucide-react": "^1.45.0",
     "next": "16.3.5",
     "openai": "^7.15.0",
@@ -22,6 +23,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/d3-force": "^3.0.10",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
