@@ -25,6 +25,19 @@ import {
 
 export type Sourced<T> = { data: T; source: "live" | "fallback" };
 
+/**
+ * One scored candidate from the matching pass. Deliberately NOT added to
+ * Dev A's locked types.ts — this is a UI-side view of the ranking, and
+ * the contract for it lives in the README.
+ */
+export interface MatchCandidate {
+  residentId: string;
+  score: number;
+  note: string;
+  /** True when a hard filter knocked them out before weighted scoring. */
+  filtered?: boolean;
+}
+
 const TIMEOUT_MS = 12_000;
 
 async function post<T>(url: string, body: unknown): Promise<T | null> {
@@ -80,6 +93,18 @@ export async function findBestMatch(
   const live = await post<ResidentMatch>("/api/match", { residentId, profile });
   if (live) return { data: live, source: "live" };
   return { data: matchFallback(residentId), source: "fallback" };
+}
+
+export async function findCandidates(
+  residentId: string,
+  profile: ResidentProfile
+): Promise<Sourced<MatchCandidate[]>> {
+  const live = await post<MatchCandidate[]>("/api/match/candidates", {
+    residentId,
+    profile,
+  });
+  if (live?.length) return { data: live, source: "live" };
+  return { data: candidatesFallback(), source: "fallback" };
 }
 
 // ---- Event recommendation ----
@@ -162,6 +187,35 @@ function matchFallback(residentId: string): ResidentMatch {
     rationale: margaretHelenRationale,
     status: "suggested",
   };
+}
+
+// The runners-up. Each note says why they scored where they did — the
+// point of showing this is that the pairing was chosen out of a field,
+// not produced from nowhere.
+function candidatesFallback(): MatchCandidate[] {
+  return [
+    {
+      residentId: "helen",
+      score: 91,
+      note: "Shared gardening interest, same small-group preference, both mornings.",
+    },
+    {
+      residentId: "frances",
+      score: 74,
+      note: "Compatible pace and group size, but no overlapping interests.",
+    },
+    {
+      residentId: "yolanda",
+      score: 66,
+      note: "Socially active and welcoming — her week centres on reading, not gardening.",
+    },
+    {
+      residentId: "dorothy",
+      score: 0,
+      note: "Filtered out: also at elevated isolation risk. Mosaic won't pair two withdrawing residents.",
+      filtered: true,
+    },
+  ];
 }
 
 function prescriptionFallback(match: ResidentMatch): SocialPrescription {

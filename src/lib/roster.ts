@@ -116,3 +116,45 @@ export const allResidents: Resident[] = [...seedResidents, ...floorResidents];
 export function findResident(id: string): Resident | undefined {
   return allResidents.find((r) => r.id === id);
 }
+
+// ============================================================
+// RISK HISTORY — six weekly readings, oldest first.
+//
+// Hardcoded like the risk score itself (§2 cuts the live detection
+// engine). Each series ends on that resident's current riskScore, and
+// the last three readings move by exactly their riskTrend, so the chart
+// and the "+31 in 3 weeks" number can never disagree.
+// ============================================================
+
+export const WEEKS = 6;
+
+const riskHistory: Record<string, number[]> = {
+  margaret: [48, 49, 51, 62, 71, 82],
+  helen: [27, 25, 24, 26, 24, 23],
+  robert: [51, 53, 55, 60, 64, 68],
+  dorothy: [53, 54, 56, 63, 69, 74],
+  arthur: [50, 51, 52, 55, 58, 61],
+  frances: [47, 48, 49, 51, 53, 55],
+  beatrice: [52, 51, 50, 49, 48, 47],
+  walter: [38, 39, 40, 41, 41, 42],
+  yolanda: [43, 42, 41, 39, 36, 34],
+  samuel: [30, 29, 28, 28, 29, 29],
+  irene: [28, 27, 26, 25, 23, 21],
+};
+
+export function historyFor(residentId: string): number[] {
+  const h = riskHistory[residentId];
+  if (h) return h;
+  // Anyone without history flat-lines at their current score rather than
+  // showing an invented trend.
+  const r = findResident(residentId);
+  return r ? Array(WEEKS).fill(r.riskScore) : [];
+}
+
+/** Floor average per week — derived from every resident, not invented. */
+export function floorAverage(): number[] {
+  const series = allResidents.map((r) => historyFor(r.id));
+  return Array.from({ length: WEEKS }, (_, i) =>
+    Math.round(series.reduce((sum, s) => sum + (s[i] ?? 0), 0) / series.length)
+  );
+}

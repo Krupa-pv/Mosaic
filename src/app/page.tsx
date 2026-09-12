@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { allResidents } from "@/lib/roster";
-import { initials, riskTone, trendLabel } from "@/lib/ui";
+import { allResidents, historyFor } from "@/lib/roster";
+import { initials, riskHex, riskTone, trendLabel } from "@/lib/ui";
+import Sparkline from "@/components/Sparkline";
 
 export default function DashboardPage() {
   const sorted = [...allResidents].sort((a, b) => b.riskScore - a.riskScore);
@@ -94,13 +95,11 @@ export default function DashboardPage() {
                     {trendLabel(r.riskTrend)}
                   </span>
 
-                  <span className="hidden w-24 sm:block">
-                    <span className="block h-[3px] w-full overflow-hidden rounded-full bg-line">
-                      <span
-                        className={`block h-full rounded-full ${tone.bar}`}
-                        style={{ width: `${r.riskScore}%` }}
-                      />
-                    </span>
+                  <span className="hidden sm:block">
+                    <Sparkline
+                      values={historyFor(r.id)}
+                      color={riskHex(r.riskLevel)}
+                    />
                   </span>
 
                   <span className="w-10 text-right font-mono text-[15px] tabular-nums text-ink">

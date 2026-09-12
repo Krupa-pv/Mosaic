@@ -7,8 +7,16 @@ import type {
   ResidentProfile,
   SocialPrescription,
 } from "@shared/types";
-import { extractCarePlan, extractIntake, findBestMatch, recommendEvent } from "@/lib/api";
+import {
+  extractCarePlan,
+  extractIntake,
+  findBestMatch,
+  findCandidates,
+  recommendEvent,
+  type MatchCandidate,
+} from "@/lib/api";
 import { mergeProfile } from "@/lib/ui";
+import CandidateList from "./CandidateList";
 import ExtractionPane from "./ExtractionPane";
 import ProfileCard from "./ProfileCard";
 import RecommendationCard from "./RecommendationCard";
@@ -39,6 +47,7 @@ export default function ResidentWorkspace({
 
   // ---- Stages 3-4: matching + prescription ----
   const [match, setMatch] = useState<ResidentMatch | null>(null);
+  const [candidates, setCandidates] = useState<MatchCandidate[]>([]);
   const [matchLoading, setMatchLoading] = useState(false);
   const [matchCached, setMatchCached] = useState(false);
   const [prescription, setPrescription] = useState<SocialPrescription | null>(null);
@@ -72,10 +81,19 @@ export default function ResidentWorkspace({
   async function runMatch() {
     setMatchLoading(true);
     setPrescription(null);
-    const { data, source } = await findBestMatch(residentId, merged);
-    setMatch(data);
-    setMatchCached(source === "fallback");
+
+    // Show the scored field and the winner together — the ranking is the
+    // evidence that the pairing was chosen, not conjured.
+    const [ranked, best] = await Promise.all([
+      findCandidates(residentId, merged),
+      findBestMatch(residentId, merged),
+    ]);
+    setCandidates(ranked.data);
+    setMatch(best.data);
+    setMatchCached(best.source === "fallback");
     setMatchLoading(false);
+
+    const { data } = best;
 
     // The pair is only useful with somewhere to put them — chain straight
     // into the event recommendation so the card lands complete.
@@ -161,6 +179,13 @@ export default function ResidentWorkspace({
                 ? "Scoring residents…"
                 : `Find a companion for ${residentName}`}
             </button>
+          )}
+
+          {match && candidates.length > 0 && (
+            <CandidateList
+              candidates={candidates}
+              selectedId={match.residentBId}
+            />
           )}
 
           {match && (

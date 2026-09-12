@@ -6,9 +6,10 @@ import {
   marginCarePlanText,
   margaretIntakeText,
 } from "@shared/seed";
-import { findResident } from "@/lib/roster";
-import { initials, riskTone, trendLabel } from "@/lib/ui";
+import { findResident, floorAverage, historyFor } from "@/lib/roster";
+import { initials, riskHex, riskTone, trendLabel } from "@/lib/ui";
 import ResidentWorkspace from "@/components/ResidentWorkspace";
+import RiskTrajectory from "@/components/RiskTrajectory";
 
 // Raw notes that feed the live extraction demo. Only Margaret and Helen
 // are fully built — everyone else on the roster is risk data only, and
@@ -80,17 +81,13 @@ export default async function ResidentPage({
             </div>
           </div>
 
-          <div className="w-full max-w-xs flex-1">
-            <div className="h-[5px] w-full overflow-hidden rounded-full bg-line">
-              <div
-                className={`h-full rounded-full ${tone.bar}`}
-                style={{ width: `${resident.riskScore}%` }}
-              />
-            </div>
-            <div className="mt-2 flex justify-between text-[10.5px] text-faint">
-              <span>Connected</span>
-              <span>Isolated</span>
-            </div>
+          <div className="min-w-[280px] flex-1">
+            <RiskTrajectory
+              values={historyFor(resident.id)}
+              average={floorAverage()}
+              name={resident.firstName}
+              color={riskHex(resident.riskLevel)}
+            />
           </div>
         </div>
 
