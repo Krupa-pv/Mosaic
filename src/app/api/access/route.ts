@@ -1,38 +1,36 @@
 import { NextResponse } from "next/server";
+import {
+  ENTITLED_STATUSES,
+  FACILITY_PRODUCT_ID,
+  accessFor,
+  tierFor,
+} from "../../../../lib/whop/catalog";
 
 // Whop access gate. Whop only ever sees the facility's subscription status —
 // no resident or clinical data crosses this boundary.
 //
-// Endpoint shape verified against docs.whop.com (Sept 2026):
+// Endpoint shape verified against docs.whop.com and against this account:
 //   GET https://api.whop.com/api/v1/memberships
 //   Authorization: Bearer <account API key>
-//   account_id  — the seller company, a biz_... id. Required with an API key.
-//   statuses[]  — one of trialing | active | past_due | completed |
-//                 canceled | expired | unresolved | drafted | canceling
-//   first       — page size
-// Response: { data: [...], page_info, total_count }
+//   account_id    the seller company, a biz_... id. Required with an API key.
+//   product_ids[] restricts the answer to the Nursing Homes product, so a
+//                 Family subscription cannot unlock the staff dashboard.
+//   statuses[]    the entitled set from the catalog, which includes
+//                 "completed" (where the free Starter lands, since a
+//                 one-time plan never becomes "active") and "past_due"
+//                 (grace period — access continues while billing is chased).
 //
 // Until the key and account id are set this returns 503 so the client's
-// graceful path runs. An unconfigured gate must not claim an active
-// subscription.
+// graceful path runs. An unconfigured gate must not claim a subscription.
 
 const WHOP_API = "https://api.whop.com/api/v1";
 
-// Statuses that mean the facility has paid and has not been revoked.
-//
-// "completed" is in this list because the Mosaic plan is a one-time
-// purchase (plan_type "one_time", release_method "buy_now"). A one-time
-// membership never becomes "active" — it settles to "completed" once
-// fulfilled, and that IS the entitled terminal state. "active" and
-// "trialing" stay so the gate keeps working if the plan is ever switched
-// to a recurring one.
-//
-// Caveat worth knowing before changing the plan: on a RECURRING plan
-// "completed" means the subscription ran its course and ended, which
-// should not grant access. Revisit this list if the plan type changes.
-//
-// "canceled" and "expired" are deliberately absent.
-const ENTITLED = ["active", "trialing", "completed"];
+interface WhopMembership {
+  id?: string;
+  status?: string;
+  plan?: { id?: string; metadata?: Record<string, unknown> };
+  product?: { id?: string };
+}
 
 export async function GET() {
   const apiKey = process.env.WHOP_API_KEY;
@@ -42,15 +40,13 @@ export async function GET() {
     return NextResponse.json({ error: "Whop not configured" }, { status: 503 });
   }
 
-  const params = new URLSearchParams({ account_id: accountId, first: "1" });
-  for (const status of ENTITLED) params.append("statuses[]", status);
+  const params = new URLSearchParams({ account_id: accountId, first: "25" });
+  params.append("product_ids[]", FACILITY_PRODUCT_ID);
+  for (const status of ENTITLED_STATUSES) params.append("statuses[]", status);
 
   try {
     const res = await fetch(`${WHOP_API}/memberships?${params}`, {
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Api-Version-Date": "2026-07-01",
-      },
+      headers: { Authorization: `Bearer ${apiKey}`, "Api-Version-Date": "2026-07-01" },
       cache: "no-store",
     });
 
@@ -60,15 +56,29 @@ export async function GET() {
       return NextResponse.json({ error: `Whop returned ${res.status}` }, { status: 502 });
     }
 
-    const json = (await res.json()) as { data?: unknown[]; total_count?: number };
-    const count = json.total_count ?? json.data?.length ?? 0;
-    const active = count > 0;
+    const json = (await res.json()) as { data?: WhopMembership[] };
+    const memberships = json.data ?? [];
+    const active = memberships.length > 0;
 
-    console.log(`[/api/access] ${count} entitled membership(s) -> active=${active}`);
+    // Report the best tier held, so a facility on Growth is not described by
+    // a stale Starter membership that is also still entitled.
+    const RANK = { starter: 0, family: 1, basic: 2, growth: 3 } as const;
+    let tier: string | undefined;
+    let dunning = false;
+
+    for (const m of memberships) {
+      if (accessFor(m.status) === "grace") dunning = true;
+      const t = tierFor(m.plan?.id, m.plan?.metadata?.tier);
+      if (t && (!tier || RANK[t] > RANK[tier as keyof typeof RANK])) tier = t;
+    }
+
+    console.log(
+      `[/api/access] ${memberships.length} entitled facility membership(s) -> active=${active} tier=${tier ?? "?"}${dunning ? " dunning" : ""}`,
+    );
 
     // `active` is what src/lib/api.ts reads. `has_access` is an alias so a
     // caller expecting either name works.
-    return NextResponse.json({ active, has_access: active });
+    return NextResponse.json({ active, has_access: active, tier, dunning });
   } catch (error) {
     console.error("[/api/access]", error);
     return NextResponse.json({ error: (error as Error).message }, { status: 502 });
