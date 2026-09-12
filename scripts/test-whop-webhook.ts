@@ -29,6 +29,7 @@ if (!SECRET) {
 const FACILITY = "prod_l7zWolodBoxKz";
 const RETIRED = "prod_UBbrTBEoC3xQW";
 const FAMILY = "prod_xuhpewe0Fs48C";
+const PLAN_FREE = "plan_4nZXr4xAxcTfr"; // $0, one_time, demo
 const PLAN_STARTER = "plan_i9jMQwnkfaypN"; // $29.99/mo
 const PLAN_GROWTH = "plan_fZrkKlznGRj8N"; // $79.99/mo
 const PLAN_FAMILY = "plan_hswCD4Xon07jE";
@@ -117,6 +118,17 @@ async function main() {
   check("subscriber recorded", f.json?.subscriber?.status, "active");
   check("family tier", f.json?.subscriber?.tier, "family");
   check("no tenant created", f.json?.tenant, undefined);
+
+  console.log("\n--- free demo plan: one_time, completed grants ---");
+  const freeMem = `mem_free_${randomUUID().slice(0, 6)}`;
+  const fr = await send(
+    membershipEvent("membership.activated", {
+      membership: freeMem, product: FACILITY, plan: PLAN_FREE, status: "completed",
+    }),
+  );
+  check("returns 200", fr.status, 200);
+  check("tenant active", fr.json?.tenant?.status, "active");
+  check("starter tier", fr.json?.tenant?.tier, "starter");
 
   console.log("\n--- retired product provisions nothing ---");
   const s = await send(

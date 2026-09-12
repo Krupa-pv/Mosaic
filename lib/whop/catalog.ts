@@ -35,6 +35,12 @@ interface PlanSpec {
 }
 
 export const PLANS: Record<string, PlanSpec> = {
+  // prod_l7zWolodBoxKz — free demo plan. One-time and $0, so checkout
+  // collects no card and the membership settles to "completed", which is
+  // its entitled terminal state. oneTime matters here: without it,
+  // "completed" would read as a lapsed subscription and revoke.
+  plan_4nZXr4xAxcTfr: { tier: "starter", monthly: 0, oneTime: true },
+
   // prod_l7zWolodBoxKz — the three buying plans. These carry no
   // metadata.tier, so the mapping is by price, ascending.
   plan_i9jMQwnkfaypN: { tier: "starter", monthly: 29.99, oneTime: false },
