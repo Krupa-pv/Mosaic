@@ -1,0 +1,141 @@
+// Builds a week of social prescriptions for the whole floor.
+//
+// Free of Next.js and of Dev B's path aliases, like the rest of lib/, so
+// everything it needs about the roster (risk, existing attendance) is
+// passed in by the route.
+//
+// Deterministic and LLM-free. It reuses rankCandidates and
+// recommendEvent rather than scoring anything itself — one scorer.
+
+import type { SocialEvent } from "../types";
+import { rankCandidates } from "./candidates";
+import { recommendEvent } from "./matching/recommend-event";
+import { allProfiles } from "./profiles";
+
+export interface Priority {
+  residentId: string;
+  /** Isolation risk, and how fast it is moving. */
+  score: number;
+  trend: number;
+}
+
+export interface PlanOptions {
+  priorities: Priority[];
+  events: SocialEvent[];
+  highRiskIds?: Set<string>;
+  /** Who already attends what, so the plan doesn't double-book. */
+  existing?: Record<string, string[]>;
+  /** Cap on how often one resident is asked to host. */
+  maxPerCompanion?: number;
+}
+
+export interface PlannedPairing {
+  eventId: string;
+  eventTitle: string;
+  startTime: string;
+  subjectId: string;
+  companionId: string;
+  score: number;
+  reason: string;
+}
+
+export interface WeekPlan {
+  pairings: PlannedPairing[];
+  /** Watched residents the plan could not place, with why. */
+  unplaced: { residentId: string; reason: string }[];
+}
+
+/**
+ * Rising risk outranks high-but-flat risk: someone climbing fast is
+ * losing ground now, which is the moment an intervention is cheapest.
+ */
+export function priorityOf(p: Priority): number {
+  return p.score + p.trend * 2;
+}
+
+export function planWeek({
+  priorities,
+  events,
+  highRiskIds,
+  existing = {},
+  maxPerCompanion = 2,
+}: PlanOptions): WeekPlan {
+  const queue = [...priorities].sort((a, b) => priorityOf(b) - priorityOf(a));
+
+  const pairings: PlannedPairing[] = [];
+  const unplaced: WeekPlan["unplaced"] = [];
+  const companionLoad = new Map<string, number>();
+  // eventId -> residents already on it, seeded with current attendance.
+  const roster = new Map<string, Set<string>>(
+    Object.entries(existing).map(([k, v]) => [k, new Set(v)])
+  );
+
+  for (const p of queue) {
+    const subject = allProfiles[p.residentId];
+    if (!subject) continue;
+
+    const candidates = rankCandidates(p.residentId, subject, { highRiskIds })
+      .filter((c) => !c.filtered)
+      // Spread the load: nobody should be asked to host the whole floor.
+      .filter(
+        (c) =>
+          (companionLoad.get(c.profile.residentId) ?? 0) < maxPerCompanion
+      );
+
+    if (candidates.length === 0) {
+      unplaced.push({
+        residentId: p.residentId,
+        reason: "No eligible companion left this week",
+      });
+      continue;
+    }
+
+    let placed = false;
+
+    for (const candidate of candidates.slice(0, 4)) {
+      const companionId = candidate.profile.residentId;
+
+      const fits = recommendEvent(subject, candidate.profile, events).filter(
+        (fit) => {
+          const on = roster.get(fit.event.id);
+          // Already together there — no prescription needed.
+          return !(on?.has(p.residentId) && on?.has(companionId));
+        }
+      );
+
+      if (fits.length === 0) continue;
+
+      const best = fits[0];
+      pairings.push({
+        eventId: best.event.id,
+        eventTitle: best.event.title,
+        startTime: best.event.startTime,
+        subjectId: p.residentId,
+        companionId,
+        score: candidate.score,
+        reason: candidate.note,
+      });
+
+      const on = roster.get(best.event.id) ?? new Set<string>();
+      on.add(p.residentId);
+      on.add(companionId);
+      roster.set(best.event.id, on);
+      companionLoad.set(
+        companionId,
+        (companionLoad.get(companionId) ?? 0) + 1
+      );
+
+      placed = true;
+      break;
+    }
+
+    if (!placed) {
+      unplaced.push({
+        residentId: p.residentId,
+        reason: "No activity this week suits them and an available companion",
+      });
+    }
+  }
+
+  return { pairings, unplaced };
+}

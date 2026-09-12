@@ -2,13 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { HEX } from "@/lib/ui";
 import AccessGate from "./AccessGate";
 
 // Every item here is a real page. No placeholder nav — a judge who
 // clicks one during the demo has to land somewhere.
 const NAV = [
-  { href: "/", label: "Residents" },
+  { href: "/", label: "Today" },
+  { href: "/residents", label: "Residents" },
+  { href: "/connections", label: "Connections" },
   { href: "/activities", label: "Activities" },
+  { href: "/plan", label: "Week plan" },
 ];
 
 export default function Sidebar() {
@@ -30,7 +34,7 @@ export default function Sidebar() {
           {NAV.map((item) => {
             const active =
               item.href === "/"
-                ? pathname === "/" || pathname.startsWith("/residents")
+                ? pathname === "/"
                 : pathname.startsWith(item.href);
             return (
               <Link
@@ -79,10 +83,10 @@ export default function Sidebar() {
 function Mark() {
   return (
     <svg viewBox="0 0 24 24" className="h-7 w-7" aria-hidden>
-      <rect x="1" y="1" width="9.5" height="9.5" rx="2.5" fill="#1f5c47" />
-      <rect x="13.5" y="1" width="9.5" height="9.5" rx="2.5" fill="#1f5c47" opacity="0.42" />
-      <rect x="1" y="13.5" width="9.5" height="9.5" rx="2.5" fill="#1f5c47" opacity="0.42" />
-      <rect x="13.5" y="13.5" width="9.5" height="9.5" rx="2.5" fill="#a33f28" />
+      <rect x="1" y="1" width="9.5" height="9.5" rx="2.5" fill={HEX.accent} />
+      <rect x="13.5" y="1" width="9.5" height="9.5" rx="2.5" fill={HEX.accent} opacity="0.42" />
+      <rect x="1" y="13.5" width="9.5" height="9.5" rx="2.5" fill={HEX.accent} opacity="0.42" />
+      <rect x="13.5" y="13.5" width="9.5" height="9.5" rx="2.5" fill={HEX.high} />
     </svg>
   );
 }

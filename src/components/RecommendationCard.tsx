@@ -2,8 +2,8 @@
 
 import type { MatchComponents, ResidentMatch, SocialPrescription } from "@shared/types";
 import { findResident } from "@/lib/roster";
-import { initials } from "@/lib/ui";
-import PairSchedule from "./PairSchedule";
+import { HEX, initials } from "@/lib/ui";
+import Tag from "./ui/Tag";
 
 const COMPONENT_LABELS: Record<keyof MatchComponents, string> = {
   interests: "Shared interests",
@@ -19,20 +19,14 @@ export default function RecommendationCard({
   prescription,
   loadingEvent,
   fallback,
-  onAccept,
-  onDecline,
 }: {
   match: ResidentMatch;
   prescription: SocialPrescription | null;
   loadingEvent: boolean;
   fallback: boolean;
-  onAccept: () => void;
-  onDecline: () => void;
 }) {
   const a = findResident(match.residentAId);
   const b = findResident(match.residentBId);
-  const status = prescription?.status ?? match.status;
-  const settled = status === "accepted" || status === "declined";
 
   return (
     <div className="kw-rise mt-4 overflow-hidden rounded-2xl border border-line bg-raised">
@@ -135,55 +129,9 @@ export default function RecommendationCard({
             ))}
           </div>
 
-          {/* ---- One-tap decision ---- */}
-          {!settled ? (
-            <div className="mt-7 flex gap-2.5">
-              <button
-                type="button"
-                onClick={onAccept}
-                className="flex-1 rounded-xl bg-accent px-4 py-3 text-[13.5px] font-medium text-white transition hover:bg-accent-deep"
-              >
-                Accept &amp; schedule
-              </button>
-              <button
-                type="button"
-                onClick={onDecline}
-                className="rounded-xl border border-line px-5 py-3 text-[13.5px] text-ink-soft transition hover:bg-surface"
-              >
-                Decline
-              </button>
-            </div>
-          ) : (
-            <div className="kw-rise mt-7">
-              {status === "accepted" ? (
-                <>
-                  <div className="rounded-xl bg-accent-soft px-5 py-4 text-[13px] leading-relaxed text-accent-deep">
-                    <strong className="font-semibold">Scheduled.</strong> Staff
-                    will be prompted for a one-tap outcome rating afterwards —
-                    that result feeds back into future matches.
-                  </div>
-                  {a && b && (
-                    <PairSchedule a={a} b={b} eventId={prescription.event.id} />
-                  )}
-                </>
-              ) : (
-                <div className="rounded-xl bg-surface px-5 py-4 text-[13px] leading-relaxed text-muted">
-                  Declined. Mosaic will suggest a different pairing.
-                </div>
-              )}
-            </div>
-          )}
         </div>
       )}
     </div>
-  );
-}
-
-function Tag({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="rounded-full bg-surface px-2.5 py-1 text-[11px] text-ink-soft ring-1 ring-inset ring-line">
-      {children}
-    </span>
   );
 }
 
@@ -207,13 +155,13 @@ function ScoreRing({ score }: { score: number }) {
   return (
     <div className="relative h-[70px] w-[70px]">
       <svg viewBox="0 0 70 70" className="h-full w-full -rotate-90">
-        <circle cx="35" cy="35" r={r} fill="none" stroke="#e0d9cd" strokeWidth="4" />
+        <circle cx="35" cy="35" r={r} fill="none" stroke={HEX.line} strokeWidth="4" />
         <circle
           cx="35"
           cy="35"
           r={r}
           fill="none"
-          stroke="#1f5c47"
+          stroke={HEX.accent}
           strokeWidth="4"
           strokeLinecap="round"
           strokeDasharray={c}

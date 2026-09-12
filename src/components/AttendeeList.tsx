@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { UserMinus, Users } from "lucide-react";
 import { useAccepted } from "@/lib/accepted";
 import { attendeesFor } from "@/lib/schedule";
 import { findResident } from "@/lib/roster";
 import { initials, riskTone } from "@/lib/ui";
+import SectionHeader from "./ui/SectionHeader";
 
 /**
  * Who is on this activity's roster — including anyone added by a
@@ -30,19 +32,17 @@ export default function AttendeeList({ eventId }: { eventId: string }) {
 
   return (
     <section className="mt-10">
-      <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-line pb-2.5">
-        <h2 className="eyebrow">
-          Attending · {going.length}
-        </h2>
-        {watching > 0 && (
-          <span className="text-[11px] text-muted">
-            {watching} {watching === 1 ? "resident" : "residents"} Mosaic is
-            watching
-          </span>
-        )}
-      </div>
+      <SectionHeader
+        icon={Users}
+        title={`Attending · ${going.length}`}
+        hint={
+          watching > 0
+            ? `${watching} ${watching === 1 ? "resident" : "residents"} Mosaic is watching`
+            : undefined
+        }
+      />
 
-      <ul>
+      <ul className="mt-2">
         {going.map((r) => (
           <Row key={r.residentId} residentId={r.residentId} isNew={r.isNew} />
         ))}
@@ -55,10 +55,14 @@ export default function AttendeeList({ eventId }: { eventId: string }) {
 
       {stopped.length > 0 && (
         <>
-          <div className="mt-8 border-b border-line pb-2.5">
-            <h2 className="eyebrow">Stopped attending · {stopped.length}</h2>
+          <div className="mt-8">
+            <SectionHeader
+              icon={UserMinus}
+              title={`Stopped attending · ${stopped.length}`}
+              tone="alert"
+            />
           </div>
-          <ul>
+          <ul className="mt-2">
             {stopped.map((r) => (
               <Row key={r.residentId} residentId={r.residentId} lapsed />
             ))}
