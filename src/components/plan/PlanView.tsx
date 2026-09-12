@@ -59,6 +59,9 @@ export default function PlanView() {
           residentId: r.id,
           score: r.riskScore,
           trend: r.riskTrend,
+          mealsFalling: r.riskFactors.some((f) =>
+            /dining|meals?\b/i.test(f)
+          ),
         })),
     []
   );

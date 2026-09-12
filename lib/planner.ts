@@ -17,6 +17,10 @@ export interface Priority {
   /** Isolation risk, and how fast it is moving. */
   score: number;
   trend: number;
+  /** Their shared-dining attendance is falling. Mealtimes are the most
+   *  frequent contact on a floor, so for these residents a seat at a
+   *  table is tried before any weekly activity. */
+  mealsFalling?: boolean;
 }
 
 export interface PlanOptions {
@@ -75,6 +79,8 @@ export function planWeek({
   maxPerCompanion = 2,
 }: PlanOptions): WeekPlan {
   const queue = [...priorities].sort((a, b) => priorityOf(b) - priorityOf(a));
+  // Shared meals, identified by their own group tag rather than by title.
+  const meals = events.filter((e) => e.startTime.startsWith("Daily"));
 
   const pairings: PlannedPairing[] = [];
   const unplaced: WeekPlan["unplaced"] = [];
@@ -122,13 +128,21 @@ export function planWeek({
     for (const candidate of candidates.slice(0, 4)) {
       const companionId = candidate.profile.residentId;
 
-      const fits = recommendEvent(subject, candidate.profile, events).filter(
-        (fit) => {
+      const eligible = (pool: SocialEvent[]) =>
+        recommendEvent(subject, candidate.profile, pool).filter((fit) => {
           const on = roster.get(fit.event.id);
           // Already together there — no prescription needed.
           return !(on?.has(p.residentId) && on?.has(companionId));
-        }
-      );
+        });
+
+      // Try a shared meal first when that's what they've withdrawn from.
+      // Three meals a day beats a weekly activity for repeated contact.
+      const fits = p.mealsFalling
+        ? (() => {
+            const atTable = eligible(meals);
+            return atTable.length > 0 ? atTable : eligible(events);
+          })()
+        : eligible(events);
 
       if (fits.length === 0) continue;
 

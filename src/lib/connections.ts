@@ -1,7 +1,7 @@
 "use client";
 
 import { allResidents } from "./roster";
-import { attendeesFor } from "./schedule";
+import { attendeesFor, lapsedFor } from "./schedule";
 import { events } from "@shared/seed";
 
 // ============================================================
@@ -88,6 +88,37 @@ export function buildConnections(
     .sort((a, b) => (contact[a] ?? 0) - (contact[b] ?? 0));
 
   return { connections, contact, isolated, windowDays: WINDOW_DAYS };
+}
+
+/**
+ * People this resident used to see and no longer does — the attendees of
+ * activities they have stopped going to, minus anyone they still share
+ * something with.
+ *
+ * This is "their social network shrinking" as a number rather than an
+ * assertion: Margaret's breakfast table didn't disappear, she stopped
+ * sitting at it.
+ */
+export function lostContacts(
+  graph: ConnectionGraph,
+  residentId: string
+): { residentId: string; via: string[] }[] {
+  const stillSeen = new Set(
+    companionsOf(graph, residentId).map((c) => c.residentId)
+  );
+  const lost = new Map<string, string[]>();
+
+  for (const eventId of lapsedFor(residentId)) {
+    const event = events.find((e) => e.id === eventId);
+    if (!event) continue;
+    for (const a of attendeesFor(eventId)) {
+      if (a.lapsed || a.residentId === residentId) continue;
+      if (stillSeen.has(a.residentId)) continue;
+      lost.set(a.residentId, [...(lost.get(a.residentId) ?? []), event.title]);
+    }
+  }
+
+  return [...lost.entries()].map(([residentId, via]) => ({ residentId, via }));
 }
 
 /** Distinct people someone shared a room with this window. */

@@ -3,6 +3,7 @@ import { findResident, floorAverage, historyFor } from "@/lib/roster";
 import { riskHex, riskTone } from "@/lib/ui";
 import RiskTrajectory from "@/components/RiskTrajectory";
 import ResidentInterventions from "@/components/resident/ResidentInterventions";
+import ResidentConnections from "@/components/resident/ResidentConnections";
 import ProfileSpotlight from "@/components/resident/ProfileSpotlight";
 
 /** Overview: why this resident is flagged. The rail carries the score,
@@ -57,6 +58,8 @@ export default async function ResidentOverviewPage({
           </ul>
         </div>
       </section>
+
+      <ResidentConnections resident={resident} />
 
       <ResidentInterventions resident={resident} />
 

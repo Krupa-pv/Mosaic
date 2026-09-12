@@ -58,7 +58,7 @@ export default function AccessGate() {
           state === "active" ? "bg-low" : "bg-faint"
         }`}
       />
-      {state === "active" ? "Subscription active" : "Whop"}
+      {state === "active" ? "Subscription active · Whop" : "Facility plan · Whop"}
     </span>
   );
 }
