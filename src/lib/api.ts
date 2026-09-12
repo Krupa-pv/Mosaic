@@ -1,5 +1,6 @@
 import type {
   ExtractionResponse,
+  MatchComponents,
   ResidentMatch,
   ResidentProfile,
   SocialPrescription,
@@ -34,6 +35,9 @@ export interface MatchCandidate {
   residentId: string;
   score: number;
   note: string;
+  /** Present from the live route; absent in older fallbacks. */
+  components?: MatchComponents;
+  interests?: string[];
   /** True when a hard filter knocked them out before weighted scoring. */
   filtered?: boolean;
 }
@@ -214,16 +218,43 @@ function candidatesFallback(): MatchCandidate[] {
       residentId: "helen",
       score: 92,
       note: "Shares gardening, same group size and time of day, complementary conversational styles.",
+      components: {
+        interests: 78,
+        socialPreferences: 100,
+        careCompatibility: 100,
+        schedule: 100,
+        personality: 85,
+        complementaryTraits: 100,
+      },
+      interests: ["gardening", "community events", "socializing"],
     },
     {
       residentId: "frances",
       score: 71,
       note: "No overlapping interests, same group size and time of day, complementary conversational styles.",
+      components: {
+        interests: 12,
+        socialPreferences: 100,
+        careCompatibility: 90,
+        schedule: 100,
+        personality: 70,
+        complementaryTraits: 100,
+      },
+      interests: ["reading", "discussion"],
     },
     {
       residentId: "yolanda",
       score: 65,
       note: "No overlapping interests, same group-size preference, complementary conversational styles.",
+      components: {
+        interests: 12,
+        socialPreferences: 100,
+        careCompatibility: 80,
+        schedule: 70,
+        personality: 62,
+        complementaryTraits: 100,
+      },
+      interests: ["reading", "games", "socializing"],
     },
     {
       residentId: "dorothy",

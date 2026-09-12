@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { useFlowActions, useFlowResults } from "./ResidentFlowProvider";
-import CandidateList from "../CandidateList";
+import MatchBoard from "./MatchBoard";
 import RecommendationCard from "../RecommendationCard";
 import EmptyStep from "./EmptyStep";
 
@@ -53,9 +53,10 @@ export default function PairStep() {
       )}
 
       {r.match && r.candidates.length > 0 && (
-        <CandidateList
+        <MatchBoard
           candidates={r.candidates}
           selectedId={r.match.residentBId}
+          subjectInterests={r.merged.interests}
           onChoose={(id) => a.runMatch(id)}
         />
       )}
