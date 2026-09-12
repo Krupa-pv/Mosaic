@@ -1,9 +1,7 @@
-import { buildFloorGraph } from "../../../lib/graph";
-import { highRiskIds } from "@/lib/directory";
-import ConnectionsView from "@/components/connections/ConnectionsView";
+import { redirect } from "next/navigation";
 
-// Computed on the server from the same scorer the rest of the app uses.
-// Deterministic and LLM-free, so it works with no credentials configured.
+// Connections merged into "Your floor" — the plan page already showed
+// this map, and two pages answering the same question was one too many.
 export default function ConnectionsPage() {
-  return <ConnectionsView graph={buildFloorGraph({ highRiskIds: highRiskIds() })} />;
+  redirect("/floor");
 }

@@ -7,12 +7,14 @@ import AccessGate from "./AccessGate";
 
 // Every item here is a real page. No placeholder nav — a judge who
 // clicks one during the demo has to land somewhere.
+// Four, not five. "Connections" and "Week plan" both answered "how is
+// the floor doing" and the plan page already embedded the map, so they
+// are one page now.
 const NAV = [
   { href: "/", label: "Today" },
   { href: "/residents", label: "Residents" },
-  { href: "/connections", label: "Connections" },
+  { href: "/floor", label: "Your floor" },
   { href: "/activities", label: "Activities" },
-  { href: "/plan", label: "Week plan" },
 ];
 
 export default function Sidebar() {

@@ -13,29 +13,32 @@ import {
 } from "d3-force";
 import { allResidents, findResident } from "@/lib/roster";
 import { buildConnections } from "@/lib/connections";
-import { HEX, riskHex } from "@/lib/ui";
+import { photoFor } from "@/lib/photos";
+import { HEX, initials } from "@/lib/ui";
 
 interface Node extends SimulationNodeDatum {
   id: string;
   contact: number;
-  level: "low" | "moderate" | "high";
 }
 type Link = SimulationLinkDatum<Node> & { times: number };
 
 const W = 760;
 const H = 520;
+const R = 26; // Every face the same size.
 const px = (n: number | undefined) => Math.round((n ?? 0) * 100) / 100;
 
 /**
  * Who has actually spent time together this week.
  *
- * The more sessions two residents have shared, the shorter and heavier
- * the thread between them, so the cluster in the middle is the floor's
- * social core and anyone drifting at the edge is genuinely not seeing
- * people — which is the thing worth acting on.
+ * One variable, deliberately: distance. Everyone is the same size and
+ * every thread is the same weight, so the only thing the picture encodes
+ * is how often two residents have chosen to be in the same room. The
+ * cluster is the floor's social core; whoever sits outside it is the
+ * person to do something about.
  *
- * Layout is deterministic: seeded starting positions, ticked to rest
- * before first paint, so it looks the same on every load.
+ * Earlier versions also varied dot size, dot colour and edge thickness —
+ * four channels saying overlapping things, which made it a puzzle rather
+ * than a glance.
  */
 export default function RecentConnections({
   onSelect,
@@ -57,7 +60,6 @@ export default function RecentConnections({
       return {
         id: r.id,
         contact: graph.contact[r.id] ?? 0,
-        level: r.riskLevel,
         x: W / 2 + Math.cos(angle) * 200,
         y: H / 2 + Math.sin(angle) * 160,
       };
@@ -79,21 +81,18 @@ export default function RecentConnections({
         "link",
         forceLink<Node, Link>(links)
           .id((d) => d.id)
-          // More time together pulls them closer.
-          .distance((l) => 230 - (l.times / most) * 170)
-          .strength((l) => 0.15 + (l.times / most) * 0.7)
+          // The only encoding: more time together, closer together.
+          .distance((l) => 250 - (l.times / most) * 185)
+          .strength((l) => 0.1 + (l.times / most) * 0.8)
       )
-      .force("charge", forceManyBody<Node>().strength(-460))
+      .force("charge", forceManyBody<Node>().strength(-560))
       .force("center", forceCenter(W / 2, H / 2))
-      .force("collide", forceCollide<Node>().radius((d) => radius(d) + 14))
+      .force("collide", forceCollide<Node>().radius(R + 14))
       .stop();
 
     sim.tick(340);
-    // Someone with a single weak link gets flung outside the frame by
-    // the charge force — which is exactly the resident you most need to
-    // see. Keep everyone inside the viewBox.
     clamp(nodes);
-    return { nodes, links, sim, most };
+    return { nodes, links, sim };
   }, [graph]);
 
   function onMove(e: React.MouseEvent) {
@@ -118,8 +117,6 @@ export default function RecentConnections({
     setDragging(null);
   }
 
-  const most = Math.max(1, ...links.map((l) => l.times));
-
   return (
     <figure className="m-0 overflow-hidden rounded-2xl border border-line bg-raised">
       <svg
@@ -127,11 +124,23 @@ export default function RecentConnections({
         viewBox={`0 0 ${W} ${H}`}
         className="w-full touch-none select-none"
         role="img"
-        aria-label={`Who has spent time together in the last ${graph.windowDays} days. Residents who share more sessions sit closer together; those at the edge have had little contact.`}
+        aria-label={`Who has spent time together in the last ${graph.windowDays} days. Residents who share more sessions are drawn closer together; anyone outside the cluster has had little contact.`}
         onMouseMove={onMove}
         onMouseUp={endDrag}
         onMouseLeave={endDrag}
       >
+        <defs>
+          {nodes.map((n) => {
+            const src = photoFor(n.id);
+            return src ? (
+              <clipPath key={n.id} id={`clip-${n.id}`}>
+                <circle r={R} cx={0} cy={0} />
+              </clipPath>
+            ) : null;
+          })}
+        </defs>
+
+        {/* One weight for every thread. */}
         {links.map((l, i) => {
           const s = l.source as Node;
           const t = l.target as Node;
@@ -143,9 +152,9 @@ export default function RecentConnections({
               y1={px(s.y)}
               x2={px(t.x)}
               y2={px(t.y)}
-              stroke={lit ? HEX.accentBright : HEX.accent}
-              strokeOpacity={hover && !lit ? 0.1 : lit ? 0.95 : 0.3}
-              strokeWidth={1 + (l.times / most) * 5}
+              stroke={lit ? HEX.accent : HEX.line}
+              strokeOpacity={hover && !lit ? 0.25 : 1}
+              strokeWidth={lit ? 2 : 1.5}
               strokeLinecap="round"
             />
           );
@@ -155,12 +164,14 @@ export default function RecentConnections({
           const r = findResident(n.id);
           const alone = n.contact <= 1;
           const lit = hover === null || hover === n.id;
+          const src = photoFor(n.id);
+
           return (
             <g
               key={n.id}
               transform={`translate(${px(n.x)} ${px(n.y)})`}
               className="cursor-pointer"
-              opacity={lit ? 1 : 0.35}
+              opacity={lit ? 1 : 0.4}
               onMouseEnter={() => setHover(n.id)}
               onMouseLeave={() => setHover(null)}
               onMouseDown={() => {
@@ -169,38 +180,46 @@ export default function RecentConnections({
               }}
               onClick={() => onSelect?.(n.id)}
             >
-              {alone && (
-                <circle
-                  r={radius(n) + 8}
-                  fill="none"
-                  stroke={HEX.high}
-                  strokeWidth={1.5}
-                  strokeDasharray="3 3"
+              {src ? (
+                <image
+                  href={src}
+                  x={-R}
+                  y={-R}
+                  width={R * 2}
+                  height={R * 2}
+                  clipPath={`url(#clip-${n.id})`}
+                  preserveAspectRatio="xMidYMid slice"
                 />
+              ) : (
+                <>
+                  <circle r={R} fill={HEX.lineSoft} />
+                  <text
+                    textAnchor="middle"
+                    dy="5"
+                    className="text-[14px] font-semibold"
+                    fill={HEX.accentDeep}
+                  >
+                    {r ? initials(r.firstName, r.lastName) : "?"}
+                  </text>
+                </>
               )}
+
+              {/* Ring: plain by default, dashed alert when barely seen. */}
               <circle
-                r={radius(n)}
-                fill={riskHex(n.level)}
-                stroke={HEX.raised}
+                r={R}
+                fill="none"
+                stroke={alone ? HEX.high : HEX.raised}
                 strokeWidth={3}
+                strokeDasharray={alone ? "4 3" : undefined}
               />
+
               <text
-                y={radius(n) + 16}
+                y={R + 18}
                 textAnchor="middle"
-                className="text-[12px]"
-                fill={HEX.accentDeep}
+                className="text-[13px]"
+                fill={alone ? HEX.high : HEX.accentDeep}
               >
                 {r?.firstName}
-              </text>
-              <text
-                y={-radius(n) - 8}
-                textAnchor="middle"
-                className="text-[11px]"
-                fill={alone ? HEX.high : HEX.faint}
-              >
-                {n.contact === 0
-                  ? "no contact"
-                  : `${n.contact} session${n.contact === 1 ? "" : "s"}`}
               </text>
             </g>
           );
@@ -208,12 +227,14 @@ export default function RecentConnections({
       </svg>
 
       {!compact && (
-        <figcaption className="flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-line-soft px-5 py-3 text-micro text-muted">
-          <span>Closer together = more time shared</span>
-          <span>Thread weight = sessions in common</span>
+        <figcaption className="flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-line-soft px-5 py-3 text-caption text-muted">
+          <span>
+            <strong className="font-medium text-ink">Closer together</strong> =
+            more time spent with each other
+          </span>
           <span className="flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full border border-dashed border-high" />
-            Little or no contact
+            <span className="h-3 w-3 rounded-full border-2 border-dashed border-high" />
+            Barely saw anyone
           </span>
           <span className="ml-auto">Drag anyone to explore</span>
         </figcaption>
@@ -223,14 +244,9 @@ export default function RecentConnections({
 }
 
 function clamp(nodes: Node[]) {
-  const m = 46;
+  const m = R + 24;
   for (const n of nodes) {
     n.x = Math.max(m, Math.min(W - m, n.x ?? W / 2));
-    n.y = Math.max(m + 10, Math.min(H - m, n.y ?? H / 2));
+    n.y = Math.max(m, Math.min(H - m - 10, n.y ?? H / 2));
   }
-}
-
-function radius(n: Node) {
-  // Size is contact, not risk — the small dots are the lonely ones.
-  return 10 + Math.min(n.contact, 14) * 1.1;
 }

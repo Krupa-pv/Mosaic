@@ -10,7 +10,8 @@ import Avatar from "./ui/Avatar";
 // so a caregiver sees their own working window, with gaps as gaps.
 const START = 8; // 8am
 const END = 17; // 5pm
-const PX_PER_HOUR = 76;
+const PX_PER_HOUR = 96;
+const CARD_H = 62; // Enough for a title plus a line of detail.
 
 function minutesOf(startTime: string): number | null {
   const m = startTime.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
@@ -50,10 +51,33 @@ export default function DayCalendar({
   const nowOffset = ((nowMinutes - START * 60) / 60) * PX_PER_HOUR;
   const nowVisible = nowMinutes >= START * 60 && nowMinutes <= END * 60;
 
-  const placed = events
+  // Two activities half an hour apart used to sit on top of each other,
+  // because a card is taller than 30 minutes of track. Anything that
+  // collides is laid out side by side instead of stacked.
+  const sorted = events
     .map((e) => ({ event: e, at: minutesOf(e.startTime) }))
     .filter((x): x is { event: SocialEvent; at: number } => x.at !== null)
     .sort((a, b) => a.at - b.at);
+
+  const minutesPerCard = (CARD_H / PX_PER_HOUR) * 60;
+  type Placed = { event: SocialEvent; at: number; col: number; cols: number };
+  const placed: Placed[] = [];
+  let cluster: Placed[] = [];
+
+  const closeCluster = () => {
+    for (const item of cluster) item.cols = cluster.length;
+    placed.push(...cluster);
+    cluster = [];
+  };
+
+  for (const item of sorted) {
+    const overlaps =
+      cluster.length > 0 &&
+      item.at - cluster[cluster.length - 1].at < minutesPerCard;
+    if (!overlaps) closeCluster();
+    cluster.push({ ...item, col: cluster.length, cols: 1 });
+  }
+  closeCluster();
 
   return (
     <div className="overflow-hidden rounded-2xl border border-line bg-raised p-5">
@@ -86,9 +110,11 @@ export default function DayCalendar({
 
         {/* ---- Events ---- */}
         <div className="absolute inset-y-0 left-[68px] right-0">
-          {placed.map(({ event, at }) => {
+          {placed.map(({ event, at, col, cols }) => {
             const top = ((at - START * 60) / 60) * PX_PER_HOUR;
             if (top < -20 || top > height) return null;
+            const width = `calc((100% - ${(cols - 1) * 8}px) / ${cols})`;
+            const left = `calc((100% - ${(cols - 1) * 8}px) / ${cols} * ${col} + ${col * 8}px)`;
 
             const going = attendeesFor(event.id).filter((a) => !a.lapsed);
             const yours = going.filter((a) => mine.has(a.residentId));
@@ -97,23 +123,25 @@ export default function DayCalendar({
               <Link
                 key={event.id}
                 href={`/activities/${event.id}`}
-                className={`absolute right-0 left-0 flex flex-wrap items-center gap-3 rounded-xl border px-4 py-2.5 transition hover:border-accent ${
+                className={`absolute flex items-center gap-3 overflow-hidden rounded-xl border px-4 transition hover:border-accent hover:z-10 ${
                   yours.length > 0
                     ? "border-accent/45 bg-accent-soft/60"
                     : "border-line-soft bg-surface"
                 }`}
-                style={{ top }}
+                style={{ top, left, width, height: CARD_H - 6 }}
               >
                 <span className="min-w-0 flex-1">
-                  <span className="block text-body text-ink">{event.title}</span>
-                  <span className="block text-micro text-muted">
+                  <span className="block truncate text-body text-ink">
+                    {event.title}
+                  </span>
+                  <span className="block truncate text-micro text-muted">
                     {event.startTime.split(" ").slice(1).join(" ")} ·{" "}
                     {event.location} · {going.length} attending
                   </span>
                 </span>
 
                 {yours.length > 0 ? (
-                  <span className="flex items-center gap-2">
+                  <span className="flex shrink-0 items-center gap-2">
                     <span className="flex -space-x-2">
                       {yours.map((a) => {
                         const r = findResident(a.residentId);

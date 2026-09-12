@@ -121,7 +121,7 @@ export default function PlanView() {
 
   function scheduleAll() {
     for (const p of kept) {
-      recordAccepted(p.eventId, [p.subjectId, p.companionId]);
+      recordAccepted(p.eventId, [p.subjectId, p.companionId, ...p.alsoThere]);
     }
   }
 
@@ -129,15 +129,11 @@ export default function PlanView() {
     <PageContainer width="wide">
       <header className="flex flex-wrap items-end justify-between gap-x-10 gap-y-6">
         <div>
-          <p className="eyebrow">Your floor · generated just now</p>
-          <h1 className="display mt-2 text-headline text-ink">
-            Next week&apos;s plan
-          </h1>
+          <p className="eyebrow">Floor 2</p>
+          <h1 className="display mt-2 text-headline text-ink">Your floor</h1>
           <p className="mt-2 max-w-prose text-caption leading-relaxed text-muted">
-            One pairing for every resident Mosaic is watching, placed on an
-            activity that suits them both. Residents whose risk is climbing
-            fastest are placed first. Recomputed from current profiles and
-            rosters each time you generate it.
+            Who has been seeing whom this week, and a plan for next week that
+            puts the residents drifting furthest out first.
           </p>
         </div>
         <dl className="flex gap-8">
@@ -181,7 +177,7 @@ export default function PlanView() {
         <aside className="xl:sticky xl:top-6 xl:self-start">
           <SectionHeader
             icon={Users}
-            title="Who's been together"
+            title="Who has been together"
             hint="last 7 days"
           />
           <div className="mt-3">
@@ -241,7 +237,7 @@ export default function PlanView() {
 
       {byDay.map(({ day, rows }) => (
         <section key={day} className="mt-8">
-          <SectionHeader icon={CalendarDays} title={day} hint={`${rows.length} ${rows.length === 1 ? "pairing" : "pairings"}`} />
+          <SectionHeader icon={CalendarDays} title={day} hint={`${rows.length} ${rows.length === 1 ? "session" : "sessions"}`} />
           <ul className="mt-3 space-y-3">
             {rows.map((p) => {
               const subject = findResident(p.subjectId);
@@ -275,6 +271,21 @@ export default function PlanView() {
                           letters="first"
                         />
                       </span>
+                      {p.alsoThere.map((id) => {
+                        const extra = findResident(id);
+                        return extra ? (
+                          <span key={id} className="-ml-2">
+                            <Avatar
+                              residentId={id}
+                              firstName={extra.firstName}
+                              lastName={extra.lastName}
+                              size="sm"
+                              ring="raised"
+                              letters="first"
+                            />
+                          </span>
+                        ) : null;
+                      })}
                     </div>
 
                     <div className="min-w-0 flex-1">
@@ -295,6 +306,15 @@ export default function PlanView() {
                       </p>
                       <p className="mt-0.5 text-caption text-muted">
                         {p.eventTitle} · {p.startTime}
+                        {p.alsoThere.length > 0 && (
+                          <>
+                            {" · with "}
+                            {p.alsoThere
+                              .map((id) => findResident(id)?.firstName)
+                              .filter(Boolean)
+                              .join(", ")}
+                          </>
+                        )}
                       </p>
                     </div>
 

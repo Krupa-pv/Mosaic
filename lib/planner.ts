@@ -35,6 +35,8 @@ export interface PlannedPairing {
   startTime: string;
   subjectId: string;
   companionId: string;
+  /** Anyone else added to the same session — groups, not just pairs. */
+  alsoThere: string[];
   score: number;
   reason: string;
 }
@@ -43,6 +45,18 @@ export interface WeekPlan {
   pairings: PlannedPairing[];
   /** Watched residents the plan could not place, with why. */
   unplaced: { residentId: string; reason: string }[];
+}
+
+/** Seats an activity should hold, by its group size. */
+function capacityOf(event: SocialEvent): number {
+  switch (event.groupSize) {
+    case "one_on_one":
+      return 2;
+    case "small":
+      return 5;
+    default:
+      return 10;
+  }
 }
 
 /**
@@ -106,19 +120,43 @@ export function planWeek({
       if (fits.length === 0) continue;
 
       const best = fits[0];
+      const on = roster.get(best.event.id) ?? new Set<string>();
+
+      // Fill the rest of the table. A small group is more natural than a
+      // pair sitting alone, and it costs no extra staff time — so add
+      // anyone else who scores well against the subject and fits.
+      const alsoThere: string[] = [];
+      const seats = capacityOf(best.event) - (on.size + 2);
+      if (seats > 0) {
+        for (const extra of candidates) {
+          if (alsoThere.length >= seats) break;
+          const id = extra.profile.residentId;
+          if (id === companionId || on.has(id)) continue;
+          if ((companionLoad.get(id) ?? 0) >= maxPerCompanion) continue;
+          // Everyone at the table has to work with the subject.
+          const fit = recommendEvent(subject, extra.profile, [best.event]);
+          if (fit.length === 0) continue;
+          alsoThere.push(id);
+        }
+      }
+
       pairings.push({
         eventId: best.event.id,
         eventTitle: best.event.title,
         startTime: best.event.startTime,
         subjectId: p.residentId,
         companionId,
+        alsoThere,
         score: candidate.score,
         reason: candidate.note,
       });
 
-      const on = roster.get(best.event.id) ?? new Set<string>();
       on.add(p.residentId);
       on.add(companionId);
+      for (const id of alsoThere) {
+        on.add(id);
+        companionLoad.set(id, (companionLoad.get(id) ?? 0) + 1);
+      }
       roster.set(best.event.id, on);
       companionLoad.set(
         companionId,
