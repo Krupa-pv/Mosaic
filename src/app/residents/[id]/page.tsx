@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import {
   helenCarePlanText,
   helenIntakeText,
-  marginCarePlanText,
+  margaretCarePlanText,
   margaretIntakeText,
 } from "@shared/seed";
 import { findResident, floorAverage, historyFor } from "@/lib/roster";
@@ -15,7 +15,7 @@ import RiskTrajectory from "@/components/RiskTrajectory";
 // are fully built — everyone else on the roster is risk data only, and
 // their page says so rather than faking a profile.
 const rawNotes: Record<string, { carePlan: string; intake: string }> = {
-  margaret: { carePlan: marginCarePlanText, intake: margaretIntakeText },
+  margaret: { carePlan: margaretCarePlanText, intake: margaretIntakeText },
   helen: { carePlan: helenCarePlanText, intake: helenIntakeText },
 };
 

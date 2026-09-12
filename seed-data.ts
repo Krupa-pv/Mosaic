@@ -51,7 +51,7 @@ export const residents: Resident[] = [
 
 // ---- Raw extraction inputs (feed these into the extraction demo live) ----
 
-export const marginCarePlanText = `Margaret ambulates with a walker and has increased fall risk.
+export const margaretCarePlanText = `Margaret ambulates with a walker and has increased fall risk.
 She has mild hearing impairment and mild cognitive impairment.
 She enjoys gardening and previously participated in cooking groups.
 She performs best in the morning and becomes fatigued later in the afternoon.`;
@@ -64,7 +64,8 @@ within normal range. Prefers mornings, tires less easily than most residents on 
 
 export const helenIntakeText = `Helen is one of the most social residents on the floor — always chatting,
 always welcoming new folks. She's been doing the Garden Circle since it started and loves anything
-outdoors. She's also active in several other community events.`;
+outdoors. She says she'd rather sit with a few people than
+be in a big crowd, and that the small groups are where she actually gets to know someone.`;
 
 // ---- Pre-verified extracted profiles ----
 // Use these as the FALLBACK if a live extraction call is slow/flaky during
@@ -110,6 +111,30 @@ export const helenProfile: ResidentProfile = {
     preferredGroupSize: "small",
   },
   personalityNote: "Warm and welcoming, actively engaged in facility social life.",
+};
+
+// Robert is the comparison candidate — without a second profile, "best match:
+// Helen" has nothing to beat. He is intentionally a poor match for Margaret.
+
+export const robertProfile: ResidentProfile = {
+  residentId: "robert",
+  careNeeds: {
+    mobility: "cane",
+    fallRisk: "moderate",
+    hearing: "mild",
+    cognition: "intact",
+  },
+  activityConstraints: ["prefers to avoid large group settings"],
+  preferredTimeOfDay: "afternoon",
+  interests: ["woodworking", "baseball", "cards"],
+  personality: {
+    introversion: 0.8,
+    conversationalStyle: "quiet",
+  },
+  socialPreferences: {
+    preferredGroupSize: "one_on_one",
+  },
+  personalityNote: "Keeps to himself; has declined the last two group activities.",
 };
 
 // ---- Event catalog ----
