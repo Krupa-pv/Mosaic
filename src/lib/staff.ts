@@ -11,20 +11,31 @@
 export interface Staff {
   id: string;
   firstName: string;
-  lastName: string;
+  /** Optional — staff are known by first name on the floor. */
+  lastName?: string;
   role: string;
   shift: "day" | "evening";
 }
 
+/** Display name, tolerating staff with no surname on record. */
+export function staffName(s: Staff): string {
+  return [s.firstName, s.lastName].filter(Boolean).join(" ");
+}
+
+/** Initials for an avatar, from whatever name parts exist. */
+export function staffInitials(s: Staff): string {
+  return (s.firstName[0] + (s.lastName?.[0] ?? "")).toUpperCase();
+}
+
 export const staff: Staff[] = [
-  { id: "menaka", firstName: "Menaka", lastName: "Raman", role: "CNA", shift: "day" },
-  { id: "marcus", firstName: "Marcus", lastName: "Bell", role: "CNA", shift: "day" },
-  { id: "priya", firstName: "Priya", lastName: "Nair", role: "LPN", shift: "evening" },
+  { id: "menaka", firstName: "Menaka", role: "CNA", shift: "day" },
+  { id: "krupa", firstName: "Krupa", role: "CNA", shift: "day" },
 ];
 
 /** The caregiver using the app. */
 export const CURRENT_STAFF_ID = "menaka";
 
+// Two caregivers, splitting the floor. Menaka holds the demo set.
 const assignment: Record<string, string> = {
   margaret: "menaka",
   helen: "menaka",
@@ -32,13 +43,13 @@ const assignment: Record<string, string> = {
   frances: "menaka",
   eleanor: "menaka",
   thomas: "menaka",
-  robert: "marcus",
-  arthur: "marcus",
-  beatrice: "marcus",
-  walter: "priya",
-  yolanda: "priya",
-  samuel: "priya",
-  irene: "priya",
+  robert: "krupa",
+  arthur: "krupa",
+  beatrice: "krupa",
+  walter: "krupa",
+  yolanda: "krupa",
+  samuel: "krupa",
+  irene: "krupa",
 };
 
 export function staffFor(residentId: string): Staff | undefined {

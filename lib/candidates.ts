@@ -19,6 +19,8 @@ export interface RankedCandidate {
 }
 
 export interface RankOptions {
+  /** Profiles built client-side, absent from the server store. */
+  extraProfiles?: Record<string, ResidentProfile>;
   /**
    * Residents already at high isolation risk. Pairing two withdrawing
    * residents is the thing this product exists to avoid, so they are
@@ -31,11 +33,21 @@ export interface RankOptions {
 export function rankCandidates(
   subjectId: string,
   subject: ResidentProfile,
-  { highRiskIds }: RankOptions = {},
+  { highRiskIds, extraProfiles }: RankOptions = {},
 ): RankedCandidate[] {
   const subjectAtRisk = highRiskIds?.has(subjectId) ?? false;
 
-  return candidatesFor(subjectId)
+  const extra = Object.values(extraProfiles ?? {}).filter(
+    (p) => p.residentId !== subjectId,
+  );
+  const field = [
+    ...candidatesFor(subjectId).filter(
+      (p) => !extraProfiles?.[p.residentId],
+    ),
+    ...extra,
+  ];
+
+  return field
     .map((profile) => {
       const result = scoreMatch(subject, profile);
       const bothWithdrawing = subjectAtRisk && (highRiskIds?.has(profile.residentId) ?? false);

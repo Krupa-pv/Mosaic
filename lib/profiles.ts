@@ -105,9 +105,10 @@ const rosterProfiles: ResidentProfile[] = [
 // assessed. Frances was briefly in this set and it read as a
 // contradiction — she attends three activities a week.
 //
-// NOT Margaret: she has to be matchable with Helen on demand, since that
-// pairing is the demo.
-const AWAITING_PROFILE = new Set(["eleanor", "thomas"]);
+// Margaret is here too: building her profile from her care plan and
+// intake note IS the demo, and uploading them makes her matchable with
+// Helen immediately.
+const AWAITING_PROFILE = new Set(["margaret", "eleanor", "thomas"]);
 
 export const allProfiles: Record<string, ResidentProfile> = Object.fromEntries(
   [margaretProfile, helenProfile, robertProfile, ...rosterProfiles]

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { staff } from "@/lib/staff";
+import { staff, staffInitials, staffName } from "@/lib/staff";
 import { residentsOf } from "@/lib/staff";
 import { signIn, useSessionId } from "@/lib/session";
 import Avatar from "./ui/Avatar";
@@ -146,12 +146,11 @@ function AccountPicker() {
                   className="group flex w-full items-center gap-4 rounded-2xl border border-line bg-raised p-5 text-left transition hover:border-accent/50"
                 >
                   <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-accent-soft text-body font-semibold text-accent-deep">
-                    {s.firstName[0]}
-                    {s.lastName[0]}
+                    {staffInitials(s)}
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block text-body font-medium text-ink">
-                      {s.firstName} {s.lastName}
+                      {staffName(s)}
                     </span>
                     <span className="block text-caption text-muted">
                       {s.role} · {s.shift} shift · {mine.length} residents

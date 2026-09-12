@@ -27,6 +27,11 @@ import {
 import { recordAccepted } from "@/lib/accepted";
 import { isProfileUsable, mergeProfile } from "@/lib/ui";
 import { readBuiltProfile, saveProfile } from "@/lib/builtProfiles";
+import { readBackground } from "@/lib/localExtract";
+import {
+  readBackground as readBackgroundFor,
+  setBackgroundField,
+} from "@/lib/background";
 
 // ============================================================
 // The resident flow's state, hoisted out of the page so it survives
@@ -394,15 +399,23 @@ export default function ResidentFlowProvider({
 
       async runIntake() {
         dispatch({ type: "intakeStart" });
-        const { data, source } = await extractIntake(
-          residentId,
-          latestRef.current.state.intakeText
-        );
+        const raw = latestRef.current.state.intakeText;
+        const { data, source } = await extractIntake(residentId, raw);
         dispatch({
           type: "intakeDone",
           result: data,
           cached: source === "fallback",
         });
+
+        // The intake note is also where life history lives. Only fill
+        // blanks — a staff edit is never overwritten by a re-read.
+        const found = readBackground(raw);
+        const current = readBackgroundFor(residentId);
+        for (const [key, value] of Object.entries(found)) {
+          if (!value) continue;
+          if (current[key as keyof typeof current]) continue;
+          setBackgroundField(residentId, key as keyof typeof current, value);
+        }
       },
 
       async runMatch(companionId) {

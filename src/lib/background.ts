@@ -36,13 +36,8 @@ export const BACKGROUND_FIELDS: {
 ];
 
 const seeded: Record<string, Background> = {
-  margaret: {
-    from: "Sacramento, California",
-    career: "Taught fourth grade for 31 years",
-    family: "Daughter Anne visits Sundays · three grandchildren",
-    routines: "Up early; reads the paper before breakfast",
-    notes: "Kept an allotment for decades — grew tomatoes and dahlias",
-  },
+  // Margaret's is deliberately absent — her intake note fills it in, so
+  // the History & background section populates live like everything else.
   helen: {
     from: "Chicago, Illinois",
     career: "Ran a florist's shop with her husband",
@@ -68,7 +63,7 @@ interface Stored extends Background {
   residentId: string;
 }
 
-const store = createStore<Stored>("mosaic.background.v1");
+const store = createStore<Stored>("mosaic.background.v2");
 
 export function useBackground(residentId: string): Background {
   const all = store.useAll();

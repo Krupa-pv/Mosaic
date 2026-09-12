@@ -21,7 +21,7 @@ interface Stored {
   at: number;
 }
 
-const store = createStore<Stored>("mosaic.profiles.v1");
+const store = createStore<Stored>("mosaic.profiles.v2");
 
 export function saveProfile(residentId: string, profile: ResidentProfile) {
   store.write([
@@ -32,6 +32,12 @@ export function saveProfile(residentId: string, profile: ResidentProfile) {
 
 export function readBuiltProfile(residentId: string): ResidentProfile | null {
   return store.read().find((p) => p.residentId === residentId)?.profile ?? null;
+}
+
+/** Every profile built in the app, keyed by resident — sent to the
+ *  planner, which otherwise only knows the server's copies. */
+export function allBuiltProfiles(): Record<string, ResidentProfile> {
+  return Object.fromEntries(store.read().map((p) => [p.residentId, p.profile]));
 }
 
 /** Ids with a profile built in-app, so the roster can stop flagging them. */

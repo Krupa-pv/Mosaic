@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LogOut } from "lucide-react";
+import { LogOut, RotateCcw } from "lucide-react";
 import { HEX } from "@/lib/ui";
 import { signOut, useCurrentStaff } from "@/lib/session";
+import { staffInitials, staffName } from "@/lib/staff";
+import { resetDemoData } from "@/lib/reset";
 import AccessGate from "./AccessGate";
 
 // Every item here is a real page. No placeholder nav — a judge who
@@ -67,25 +69,36 @@ export default function Sidebar() {
                 aria-hidden
                 className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent-soft text-micro font-semibold text-accent-deep"
               >
-                {me ? `${me.firstName[0]}${me.lastName[0]}` : "MG"}
+                {me ? staffInitials(me) : "MG"}
               </span>
               <span className="min-w-0 leading-tight max-lg:hidden">
                 <span className="block truncate text-caption font-medium text-ink">
-                  {me ? `${me.firstName} ${me.lastName}` : "Maple Grove"}
+                  {me ? staffName(me) : "Maple Grove"}
                 </span>
                 <span className="block text-micro text-muted">
                   {me ? `${me.role} · Maple Grove` : "Care Center · Floor 2"}
                 </span>
               </span>
             </div>
-            <button
-              type="button"
-              onClick={signOut}
-              className="mt-3 inline-flex items-center gap-1.5 text-micro text-muted transition hover:text-accent max-lg:mt-0 max-lg:ml-3"
-            >
-              <LogOut aria-hidden className="h-3 w-3" strokeWidth={2} />
-              Sign out
-            </button>
+            <div className="mt-3 flex items-center gap-4 max-lg:mt-0 max-lg:ml-3">
+              <button
+                type="button"
+                onClick={signOut}
+                className="inline-flex items-center gap-1.5 text-micro text-muted transition hover:text-accent"
+              >
+                <LogOut aria-hidden className="h-3 w-3" strokeWidth={2} />
+                Sign out
+              </button>
+              <button
+                type="button"
+                onClick={resetDemoData}
+                title="Clear profiles, notes and schedules built in this browser"
+                className="inline-flex items-center gap-1.5 text-micro text-muted transition hover:text-high"
+              >
+                <RotateCcw aria-hidden className="h-3 w-3" strokeWidth={2} />
+                Reset demo
+              </button>
+            </div>
           </div>
         </div>
       </div>

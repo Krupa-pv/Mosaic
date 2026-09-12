@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Check } from "lucide-react";
 import type { Resident } from "@shared/types";
 import { historyFor } from "@/lib/roster";
-import { staffFor } from "@/lib/staff";
+import { staffFor, staffName } from "@/lib/staff";
 import { riskHex, trendLabel } from "@/lib/ui";
 import { useFlowResults } from "./ResidentFlowProvider";
 import Sparkline from "../Sparkline";
@@ -57,7 +57,7 @@ export default function SummaryRail({ resident }: { resident: Resident }) {
             <p className="mt-1.5 text-micro text-muted">
               Assigned to{" "}
               <span className="font-medium text-accent">
-                {owner.firstName} {owner.lastName}
+                {staffName(owner)}
               </span>{" "}
               · {owner.role}
             </p>

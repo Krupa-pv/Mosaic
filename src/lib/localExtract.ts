@@ -16,6 +16,40 @@ import type { ExtractionResponse } from "@shared/types";
 const has = (t: string, ...needles: string[]) =>
   needles.some((n) => t.includes(n));
 
+/** Drop letterhead and field labels — "Taken by: D. Whitmore" is not a
+ *  sentence about the resident, and its initials break sentence splitting. */
+function bodyOf(raw: string): string {
+  return raw
+    .split(/\r?\n/)
+    .filter((line) => {
+      const l = line.trim();
+      if (!l) return false;
+      if (/^[A-Z][A-Za-z ]{2,30}:\s*\S/.test(l)) return false; // Label: value
+      if (/^[A-Z][A-Z .&—-]{4,}$/.test(l)) return false; // SECTION HEADING
+      // A short line with no terminal punctuation is a title, not a
+      // sentence — "Social Intake Note — Room 214" was being glued to
+      // the first real sentence and surfacing in the profile.
+      if (l.length < 70 && !/[.!?]$/.test(l)) return false;
+      return true;
+    })
+    .join(" ");
+}
+
+/** Sentences, without splitting on initials like "D. Whitmore". */
+function sentencesOf(raw: string): string[] {
+  return bodyOf(raw)
+    .replace(/\s+/g, " ")
+    .split(/(?<![A-Z])(?<=[.!?])\s+(?=[A-Z])/)
+    .map((x) => x.trim())
+    .filter((x) => x.length > 12);
+}
+
+/** The sentence an organ or topic is actually discussed in. */
+function sentenceAbout(raw: string, word: string): string {
+  const hit = sentencesOf(raw).find((x) => x.toLowerCase().includes(word));
+  return (hit ?? "").toLowerCase();
+}
+
 /** Words worth treating as an interest, mapped to the matcher's tags. */
 // Word-boundary anchored. Loose substrings produced confident nonsense:
 // "no falls recorded" matched `record` and gave the resident an interest
@@ -53,7 +87,7 @@ export function readCarePlan(
   residentId: string,
   raw: string
 ): ExtractionResponse {
-  const t = raw.toLowerCase();
+  const t = bodyOf(raw).toLowerCase();
 
   const mobility = has(t, "wheelchair")
     ? ("wheelchair" as const)
@@ -73,13 +107,16 @@ export function readCarePlan(
         ? ("low" as const)
         : undefined;
 
+  // Scoped to the sentence the organ is named in. A fixed character
+  // window spilled into the next line — "Vision is within normal range"
+  // was followed by "Mild cognitive impairment", so vision read as mild.
   const sensory = (organ: "hearing" | "vision") => {
-    const near = t.slice(Math.max(0, t.indexOf(organ) - 60), t.indexOf(organ) + 90);
     if (!t.includes(organ)) return undefined;
+    const near = sentenceAbout(raw, organ);
     if (has(near, "severe")) return "severe" as const;
     if (has(near, "moderate")) return "moderate" as const;
     if (has(near, "mild")) return "mild" as const;
-    if (has(near, "normal", "corrected", "no aids", "within normal"))
+    if (has(near, "normal", "corrected", "no aids"))
       return "normal" as const;
     return undefined;
   };
@@ -112,6 +149,41 @@ export function readCarePlan(
     activityConstraints: constraints,
     preferredTimeOfDay,
     interests: findInterests(t),
+  };
+}
+
+export interface ReadBackground {
+  from?: string;
+  career?: string;
+  family?: string;
+  routines?: string;
+  notes?: string;
+}
+
+/**
+ * Life history out of the intake note. Sentence-level rather than
+ * keyword-level: these fields are read by a person, so a whole clause is
+ * more useful than a tag.
+ */
+export function readBackground(raw: string): ReadBackground {
+  const sentences = sentencesOf(raw);
+  const used = new Set<string>();
+
+  // One sentence per field. Without this, a sentence mentioning both a
+  // hometown and a daughter filled From and Family with the same text.
+  const pick = (re: RegExp) => {
+    const hit = sentences.find((x) => !used.has(x) && re.test(x));
+    if (!hit) return undefined;
+    used.add(hit);
+    return hit.length > 120 ? `${hit.slice(0, 117).trimEnd()}…` : hit;
+  };
+
+  return {
+    from: pick(/\b(grew up|was born|moved here|originally from|comes from)\b/i),
+    career: pick(/\b(taught|worked|career|retired|ran a|foreman|engineer|nurse|teacher)\b/i),
+    family: pick(/\b(daughter|son|grandchild|husband|wife)\b/i),
+    routines: pick(/\b(every morning|each morning|likes to|before breakfast|after lunch|routine)\b/i),
+    notes: pick(/\b(kept|keeps|used to|for decades|for years)\b/i),
   };
 }
 

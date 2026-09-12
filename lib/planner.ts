@@ -7,7 +7,7 @@
 // Deterministic and LLM-free. It reuses rankCandidates and
 // recommendEvent rather than scoring anything itself — one scorer.
 
-import type { SocialEvent } from "../types";
+import type { ResidentProfile, SocialEvent } from "../types";
 import { rankCandidates } from "./candidates";
 import { recommendEvent } from "./matching/recommend-event";
 import { allProfiles } from "./profiles";
@@ -26,6 +26,8 @@ export interface Priority {
 export interface PlanOptions {
   priorities: Priority[];
   events: SocialEvent[];
+  /** Profiles built in the app, which the server store doesn't have. */
+  extraProfiles?: Record<string, ResidentProfile>;
   highRiskIds?: Set<string>;
   /** Who already attends what, so the plan doesn't double-book. */
   existing?: Record<string, string[]>;
@@ -77,8 +79,10 @@ export function planWeek({
   highRiskIds,
   existing = {},
   maxPerCompanion = 2,
+  extraProfiles,
 }: PlanOptions): WeekPlan {
   const queue = [...priorities].sort((a, b) => priorityOf(b) - priorityOf(a));
+  const profiles = { ...allProfiles, ...(extraProfiles ?? {}) };
   // Shared meals, identified by their own group tag rather than by title.
   const meals = events.filter((e) => e.startTime.startsWith("Daily"));
 
@@ -91,7 +95,7 @@ export function planWeek({
   );
 
   for (const p of queue) {
-    const subject = allProfiles[p.residentId];
+    const subject = profiles[p.residentId];
     if (!subject) {
       unplaced.push({
         residentId: p.residentId,
@@ -107,7 +111,10 @@ export function planWeek({
       continue;
     }
 
-    const candidates = rankCandidates(p.residentId, subject, { highRiskIds })
+    const candidates = rankCandidates(p.residentId, subject, {
+      highRiskIds,
+      extraProfiles,
+    })
       .filter((c) => !c.filtered)
       // Spread the load: nobody should be asked to host the whole floor.
       .filter(

@@ -24,6 +24,7 @@ import Stat from "../ui/Stat";
 import Tag from "../ui/Tag";
 import RecentConnections from "../connections/RecentConnections";
 import { buildConnections } from "@/lib/connections";
+import { allBuiltProfiles as builtProfiles } from "@/lib/builtProfiles";
 import { findInterestGaps } from "@/lib/gaps";
 
 const DAYS = [
@@ -80,7 +81,7 @@ export default function PlanView() {
       const res = await fetch("/api/plan-week", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ priorities, existing }),
+        body: JSON.stringify({ priorities, existing, extraProfiles: builtProfiles() }),
       });
       if (res.ok) return (await res.json()) as WeekPlan;
     } catch {
