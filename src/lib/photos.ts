@@ -32,6 +32,7 @@ const present = new Set<string>([
   "samuel",
   "irene",
   "eleanor",
+  "thomas",
 ]);
 
 export function photoFor(residentId: string): string | null {

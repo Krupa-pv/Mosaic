@@ -5,6 +5,7 @@ import type {
   ResidentProfile,
   SocialPrescription,
 } from "@shared/types";
+import { readCarePlan, readIntake } from "./localExtract";
 import {
   events,
   helenProfile,
@@ -73,7 +74,7 @@ export async function extractCarePlan(
     rawText,
   });
   if (live) return { data: live, source: "live" };
-  return { data: carePlanFallback(residentId), source: "fallback" };
+  return { data: carePlanFallback(residentId, rawText), source: "fallback" };
 }
 
 export async function extractIntake(
@@ -85,7 +86,7 @@ export async function extractIntake(
     rawText,
   });
   if (live) return { data: live, source: "live" };
-  return { data: intakeFallback(residentId), source: "fallback" };
+  return { data: intakeFallback(residentId, rawText), source: "fallback" };
 }
 
 /** The profile already on file, if this resident has been profiled. */
@@ -178,25 +179,36 @@ const carePlanInterests: Record<string, string[]> = {
   helen: [],
 };
 
-function carePlanFallback(residentId: string): ExtractionResponse {
-  const p = profilesById[residentId] ?? margaretProfile;
+// Read the document. The previous version returned a hardcoded profile,
+// which was right for the two seeded residents and silently handed back
+// Margaret's care needs for anybody else — so uploading a care plan for
+// a new resident produced someone else's clinical data.
+//
+// The seeded copy is still preferred for the demo pair, because it was
+// hand-verified; anything else is parsed from what was actually given.
+function carePlanFallback(residentId: string, rawText = ""): ExtractionResponse {
+  const parsed = readCarePlan(residentId, rawText);
+  const seeded = profilesById[residentId];
+  if (!seeded) return parsed;
   return {
     residentId,
-    careNeeds: p.careNeeds,
-    activityConstraints: p.activityConstraints,
-    preferredTimeOfDay: p.preferredTimeOfDay,
-    interests: carePlanInterests[residentId] ?? [],
+    careNeeds: seeded.careNeeds,
+    activityConstraints: seeded.activityConstraints,
+    preferredTimeOfDay: seeded.preferredTimeOfDay,
+    interests: carePlanInterests[residentId] ?? parsed.interests,
   };
 }
 
-function intakeFallback(residentId: string): ExtractionResponse {
-  const p = profilesById[residentId] ?? margaretProfile;
+function intakeFallback(residentId: string, rawText = ""): ExtractionResponse {
+  const parsed = readIntake(residentId, rawText);
+  const seeded = profilesById[residentId];
+  if (!seeded) return parsed;
   return {
     residentId,
-    interests: p.interests,
-    personality: p.personality,
-    socialPreferences: p.socialPreferences,
-    personalityNote: p.personalityNote,
+    interests: seeded.interests,
+    personality: seeded.personality,
+    socialPreferences: seeded.socialPreferences,
+    personalityNote: seeded.personalityNote,
   };
 }
 

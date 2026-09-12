@@ -31,6 +31,7 @@ const assignment: Record<string, string> = {
   dorothy: "menaka",
   frances: "menaka",
   eleanor: "menaka",
+  thomas: "menaka",
   robert: "marcus",
   arthur: "marcus",
   beatrice: "marcus",

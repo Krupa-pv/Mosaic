@@ -25,7 +25,8 @@ import {
   type MatchCandidate,
 } from "@/lib/api";
 import { recordAccepted } from "@/lib/accepted";
-import { mergeProfile } from "@/lib/ui";
+import { isProfileUsable, mergeProfile } from "@/lib/ui";
+import { readBuiltProfile, saveProfile } from "@/lib/builtProfiles";
 
 // ============================================================
 // The resident flow's state, hoisted out of the page so it survives
@@ -342,6 +343,13 @@ export default function ResidentFlowProvider({
   // render — safe because actions only ever fire from event handlers.
   useEffect(() => {
     let cancelled = false;
+    // A profile built in the app wins over the server's copy — it is by
+    // definition the newer of the two.
+    const local = readBuiltProfile(residentId);
+    if (local) {
+      dispatch({ type: "onFile", profile: local });
+      return;
+    }
     fetchProfile(residentId).then((p) => {
       if (!cancelled) dispatch({ type: "onFile", profile: p });
     });
@@ -349,6 +357,16 @@ export default function ResidentFlowProvider({
       cancelled = true;
     };
   }, [residentId]);
+
+  // Persist whatever the profile currently is, so building one actually
+  // changes the app: the roster stops flagging them, matching stops
+  // refusing, and it survives navigating away.
+  const usable = isProfileUsable(merged);
+  const builtSignature = usable ? JSON.stringify(merged) : null;
+  useEffect(() => {
+    if (!builtSignature) return;
+    saveProfile(residentId, JSON.parse(builtSignature) as ResidentProfile);
+  }, [builtSignature, residentId]);
 
   const latestRef = useRef({ merged, state });
   useEffect(() => {

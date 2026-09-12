@@ -100,9 +100,14 @@ const rosterProfiles: ResidentProfile[] = [
 // Companion tab refuses to match, and the planner reports them unplaced
 // until someone reads a care plan in.
 //
-// Margaret is deliberately among them — building her profile live from
-// her care plan is the demo, and it can't be a demo if it's already done.
-const AWAITING_PROFILE = new Set(["margaret", "eleanor"]);
+// Both are recent admissions, which is the only coherent reason to have
+// no care plan: a resident with a full weekly routine has obviously been
+// assessed. Frances was briefly in this set and it read as a
+// contradiction — she attends three activities a week.
+//
+// NOT Margaret: she has to be matchable with Helen on demand, since that
+// pairing is the demo.
+const AWAITING_PROFILE = new Set(["eleanor", "thomas"]);
 
 export const allProfiles: Record<string, ResidentProfile> = Object.fromEntries(
   [margaretProfile, helenProfile, robertProfile, ...rosterProfiles]

@@ -114,6 +114,19 @@ const floorResidents: Resident[] = [
     ],
   },
   {
+    id: "thomas",
+    firstName: "Thomas",
+    lastName: "Okafor",
+    roomNumber: "132",
+    riskScore: 55,
+    riskTrend: 0,
+    riskLevel: "moderate",
+    riskFactors: [
+      "Admitted 5 days ago — no baseline yet",
+      "Not yet on any activity roster",
+    ],
+  },
+  {
     id: "irene",
     firstName: "Irene",
     lastName: "Kaminski",
@@ -135,7 +148,15 @@ export function findResident(id: string): Resident | undefined {
 /** Recently admitted — shown on the roster until a profile exists. */
 const newAdmissions: Record<string, string> = {
   eleanor: "Admitted 2 days ago",
+  thomas: "Admitted 5 days ago",
 };
+
+/** True for residents who simply haven't been here long enough to have
+ *  a routine — so an empty schedule and no contact is expected, not a
+ *  warning sign. */
+export function isNewAdmission(residentId: string): boolean {
+  return residentId in newAdmissions;
+}
 
 export function admissionNote(residentId: string): string | undefined {
   return newAdmissions[residentId];
@@ -166,6 +187,7 @@ const riskHistory: Record<string, number[]> = {
   irene: [28, 27, 26, 25, 23, 21],
   // No history yet — she arrived two days ago.
   eleanor: [],
+  thomas: [],
 };
 
 export function historyFor(residentId: string): number[] {
