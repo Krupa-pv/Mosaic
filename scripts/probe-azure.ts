@@ -4,42 +4,19 @@
 //   npm run probe
 //   npx tsx scripts/probe-azure.ts <endpoint> <key> [deployment]
 
-import { readFileSync } from "node:fs";
+import { loadEnvLocal } from "../lib/env-local";
 
 const API_VERSION = "2024-10-21";
 
-function loadEnvLocal(): Record<string, string> {
-  try {
-    const raw = readFileSync(".env.local", "utf8");
-    const out: Record<string, string> = {};
-    for (const line of raw.split("\n")) {
-      const trimmed = line.trim();
-      if (!trimmed || trimmed.startsWith("#")) continue;
-      const eq = trimmed.indexOf("=");
-      if (eq === -1) continue;
-      // Tolerate quotes and leftover <placeholder> brackets from copy-paste.
-      const value = trimmed
-        .slice(eq + 1)
-        .trim()
-        .replace(/^["']|["']$/g, "")
-        .replace(/^<(.*)>$/, "$1");
-      out[trimmed.slice(0, eq).trim()] = value;
-    }
-    return out;
-  } catch {
-    return {};
-  }
-}
-
-const env = loadEnvLocal();
+loadEnvLocal();
 const [, , argEndpoint, argKey, argDeployment] = process.argv;
 
 // One bare argument means "same resource, try this deployment name instead".
 const oneArg = argEndpoint !== undefined && argKey === undefined;
 
-const rawEndpoint = (oneArg ? undefined : argEndpoint) ?? env.AZURE_OPENAI_ENDPOINT;
-const apiKey = argKey ?? env.AZURE_OPENAI_API_KEY;
-const deployment = (oneArg ? argEndpoint : argDeployment) ?? env.AZURE_OPENAI_DEPLOYMENT;
+const rawEndpoint = (oneArg ? undefined : argEndpoint) ?? process.env.AZURE_OPENAI_ENDPOINT;
+const apiKey = argKey ?? process.env.AZURE_OPENAI_API_KEY;
+const deployment = (oneArg ? argEndpoint : argDeployment) ?? process.env.AZURE_OPENAI_DEPLOYMENT;
 
 if (!rawEndpoint || !apiKey) {
   console.error("Missing endpoint or key. Set them in .env.local or pass as arguments.");

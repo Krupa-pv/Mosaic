@@ -1,27 +1,65 @@
 // ============================================================
-// Tenant store — facilities that have an active Whop subscription.
+// Two stores, because the two Whop products mean different things.
 //
-// In-memory on purpose: this build has no database. That means tenants
-// do not survive a server restart, and in a multi-instance deploy each
-// instance would keep its own copy. Fine for the hackathon, wrong for
-// production — this is the seam where a real table goes.
+//   Nursing Homes -> a facility Tenant, which unlocks the dashboard
+//   Family        -> a Subscriber record only, which unlocks nothing
 //
-// Nothing resident-related is ever stored here. Whop only sees billing.
+// In-memory on purpose: this build has no database. Records do not
+// survive a restart, and each instance of a multi-instance deploy would
+// keep its own copy. This is the seam where real tables go.
+//
+// Nothing resident-related is stored here. Whop only ever sees billing.
 // ============================================================
+
+import type { Tier } from "./whop/catalog";
 
 export interface Tenant {
   whopMembershipId: string;
   whopProductId?: string;
+  whopPlanId?: string;
   ownerWhopUserId?: string;
+  tier?: Tier;
+  /** Our own view: does this tenant get in? */
   status: "active" | "inactive";
+  /** Whop's raw membership status, kept for display and debugging. */
+  whopStatus?: string;
+  /** True while a payment has failed and billing is being chased.
+   *  Access continues — this is a flag, not a lock. */
+  dunning: boolean;
+  updatedAt: string;
+}
+
+export interface Subscriber {
+  whopMembershipId: string;
+  whopProductId?: string;
+  whopPlanId?: string;
+  whopUserId?: string;
+  tier?: Tier;
+  status: "active" | "inactive";
+  whopStatus?: string;
   updatedAt: string;
 }
 
 const tenants = new Map<string, Tenant>();
+const subscribers = new Map<string, Subscriber>();
 
-export function upsertTenant(tenant: Omit<Tenant, "updatedAt">): Tenant {
-  const record: Tenant = { ...tenant, updatedAt: new Date().toISOString() };
-  tenants.set(tenant.whopMembershipId, record);
+const now = () => new Date().toISOString();
+
+// ---- Facility tenants ----------------------------------------
+
+export function upsertTenant(
+  input: Omit<Tenant, "updatedAt" | "dunning"> & { dunning?: boolean },
+): Tenant {
+  const existing = tenants.get(input.whopMembershipId);
+  const record: Tenant = {
+    ...existing,
+    ...input,
+    // An explicit flag wins; otherwise carry the existing one forward so a
+    // membership update does not silently clear an open dunning state.
+    dunning: input.dunning ?? existing?.dunning ?? false,
+    updatedAt: now(),
+  };
+  tenants.set(input.whopMembershipId, record);
   return record;
 }
 
@@ -31,18 +69,52 @@ export function deactivateTenant(whopMembershipId: string): Tenant | undefined {
   const record: Tenant = {
     ...existing,
     status: "inactive",
-    updatedAt: new Date().toISOString(),
+    dunning: false,
+    updatedAt: now(),
   };
   tenants.set(whopMembershipId, record);
   return record;
 }
 
-export function getTenant(whopMembershipId: string): Tenant | undefined {
-  return tenants.get(whopMembershipId);
+/** Payment failed: keep access, raise the flag. */
+export function flagDunning(whopMembershipId: string, dunning: boolean): Tenant | undefined {
+  const existing = tenants.get(whopMembershipId);
+  if (!existing) return undefined;
+  const record: Tenant = { ...existing, dunning, updatedAt: now() };
+  tenants.set(whopMembershipId, record);
+  return record;
+}
+
+export function getTenant(id: string): Tenant | undefined {
+  return tenants.get(id);
 }
 
 export function listTenants(): Tenant[] {
   return [...tenants.values()];
+}
+
+export function hasActiveTenant(): boolean {
+  return listTenants().some((t) => t.status === "active");
+}
+
+// ---- Family subscribers --------------------------------------
+
+export function upsertSubscriber(input: Omit<Subscriber, "updatedAt">): Subscriber {
+  const record: Subscriber = { ...input, updatedAt: now() };
+  subscribers.set(input.whopMembershipId, record);
+  return record;
+}
+
+export function deactivateSubscriber(whopMembershipId: string): Subscriber | undefined {
+  const existing = subscribers.get(whopMembershipId);
+  if (!existing) return undefined;
+  const record: Subscriber = { ...existing, status: "inactive", updatedAt: now() };
+  subscribers.set(whopMembershipId, record);
+  return record;
+}
+
+export function listSubscribers(): Subscriber[] {
+  return [...subscribers.values()];
 }
 
 // ---- Idempotency ---------------------------------------------
