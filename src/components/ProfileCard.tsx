@@ -39,11 +39,30 @@ import { titleCase } from "@/lib/ui";
 export default function ProfileCard({
   profile,
   onChange,
+  revealedAt,
 }: {
   profile: ResidentProfile;
   onChange: (p: ResidentProfile) => void;
+  /** When extraction last returned. Drives the one-time reveal. */
+  revealedAt?: number | null;
 }) {
   const [draft, setDraft] = useState("");
+
+  // Animate only if this mount closely follows an extraction. Subpages
+  // remount on every tab click, so without this the whole reveal would
+  // replay each time you navigate back — which on the second visit reads
+  // as the page being broken.
+  const [animate] = useState(
+    () => revealedAt != null && Date.now() - revealedAt < 2500
+  );
+  let order = 0;
+  const reveal = () =>
+    animate
+      ? {
+          className: "kw-stagger",
+          style: { "--kw-delay": `${order++ * 70}ms` } as React.CSSProperties,
+        }
+      : {};
 
   const addInterest = () => {
     const v = draft.trim().toLowerCase();
@@ -71,10 +90,17 @@ export default function ProfileCard({
       {/* ---- 1. Interests ---- */}
       <Section icon={Sparkles} title="Interests" hint="drives matching">
         <div className="flex flex-wrap items-center gap-2">
-          {profile.interests.map((i) => (
+          {profile.interests.map((i, idx) => (
             <span
               key={i}
-              className="inline-flex items-center gap-1.5 rounded-full bg-raised py-1 pr-2 pl-3 text-[12.5px] text-ink ring-1 ring-inset ring-accent/20"
+              className={`inline-flex items-center gap-1.5 rounded-full bg-raised py-1 pr-2 pl-3 text-caption text-ink ring-1 ring-inset ring-accent/20 ${
+                animate ? "kw-stagger" : ""
+              }`}
+              style={
+                animate
+                  ? ({ "--kw-delay": `${idx * 70}ms` } as React.CSSProperties)
+                  : undefined
+              }
             >
               {i}
               <button
@@ -108,7 +134,7 @@ export default function ProfileCard({
       {/* ---- 2. Social preferences ---- */}
       <Section icon={Users} title="How they socialize">
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field icon={Users} label="Group size">
+          <Field icon={Users} label="Group size" reveal={reveal}>
             <Segmented
               value={profile.socialPreferences.preferredGroupSize}
               options={
@@ -122,7 +148,7 @@ export default function ProfileCard({
             />
           </Field>
 
-          <Field icon={Clock} label="Best time of day">
+          <Field icon={Clock} label="Best time of day" reveal={reveal}>
             <Segmented
               value={profile.preferredTimeOfDay}
               options={
@@ -136,7 +162,7 @@ export default function ProfileCard({
             />
           </Field>
 
-          <Field icon={MessageCircle} label="Conversation">
+          <Field icon={MessageCircle} label="Conversation" reveal={reveal}>
             <Segmented
               value={profile.personality.conversationalStyle}
               options={
@@ -154,7 +180,7 @@ export default function ProfileCard({
             />
           </Field>
 
-          <Field icon={Gauge} label="Social energy">
+          <Field icon={Gauge} label="Social energy" reveal={reveal}>
             <div className="flex items-center gap-3">
               <span className="w-14 shrink-0 text-[10.5px] text-faint">
                 Reserved
@@ -197,14 +223,14 @@ export default function ProfileCard({
         last
       >
         <div className="grid gap-x-8 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
-          <Field icon={Footprints} label="Mobility" inline>
+          <Field icon={Footprints} label="Mobility" inline reveal={reveal}>
             <Picker
               value={care.mobility}
               options={["independent", "cane", "walker", "wheelchair"] as Mobility[]}
               onChange={(v) => setCare({ mobility: v })}
             />
           </Field>
-          <Field icon={TriangleAlert} label="Fall risk" inline>
+          <Field icon={TriangleAlert} label="Fall risk" inline reveal={reveal}>
             <Picker
               value={care.fallRisk}
               options={["low", "moderate", "high"] as const}
@@ -212,7 +238,7 @@ export default function ProfileCard({
               tone={care.fallRisk === "high" ? "alert" : "default"}
             />
           </Field>
-          <Field icon={Brain} label="Cognition" inline>
+          <Field icon={Brain} label="Cognition" inline reveal={reveal}>
             <Picker
               value={care.cognition}
               options={
@@ -221,14 +247,14 @@ export default function ProfileCard({
               onChange={(v) => setCare({ cognition: v })}
             />
           </Field>
-          <Field icon={Ear} label="Hearing" inline>
+          <Field icon={Ear} label="Hearing" inline reveal={reveal}>
             <Picker
               value={care.hearing}
               options={["normal", "mild", "moderate", "severe"] as SensoryLevel[]}
               onChange={(v) => setCare({ hearing: v })}
             />
           </Field>
-          <Field icon={Eye} label="Vision" inline>
+          <Field icon={Eye} label="Vision" inline reveal={reveal}>
             <Picker
               value={care.vision}
               options={["normal", "mild", "moderate", "severe"] as SensoryLevel[]}
@@ -278,16 +304,19 @@ function Field({
   icon: Icon,
   label,
   inline = false,
+  reveal,
   children,
 }: {
   icon: LucideIcon;
   label: string;
   inline?: boolean;
+  reveal?: () => { className?: string; style?: React.CSSProperties };
   children: React.ReactNode;
 }) {
+  const anim = reveal?.() ?? {};
   if (inline) {
     return (
-      <div className="flex items-center gap-2.5">
+      <div {...anim} className={`flex items-center gap-2.5 ${anim.className ?? ""}`}>
         <Icon aria-hidden className="h-3.5 w-3.5 shrink-0 text-muted" strokeWidth={1.75} />
         <span className="flex-1 text-[12px] text-ink-soft">{label}</span>
         {children}
@@ -295,10 +324,10 @@ function Field({
     );
   }
   return (
-    <div>
+    <div {...anim} className={anim.className}>
       <div className="flex items-center gap-2">
         <Icon aria-hidden className="h-3.5 w-3.5 shrink-0 text-muted" strokeWidth={1.75} />
-        <span className="text-[11.5px] text-muted">{label}</span>
+        <span className="text-caption text-muted">{label}</span>
       </div>
       <div className="mt-2">{children}</div>
     </div>

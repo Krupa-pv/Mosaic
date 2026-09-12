@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { useFlowActions, useFlowDocs, useFlowResults } from "./ResidentFlowProvider";
-import ExtractionPane from "../ExtractionPane";
+import SourcePanel from "./SourcePanel";
 import ProfileCard from "../ProfileCard";
 
 export default function ProfileStep() {
@@ -24,32 +24,35 @@ export default function ProfileStep() {
       </header>
 
       <div className="mt-5 grid gap-4 xl:grid-cols-2">
-        <ExtractionPane
+        <SourcePanel
           title="Care plan"
-          hint="clinical"
+          hint="clinical · upload or paste"
           value={carePlanText}
           onChange={a.setCarePlanText}
           onRun={a.runCarePlan}
           loading={r.carePlanLoading}
-          result={r.carePlanResult}
-          fallback={r.carePlanCached}
+          done={r.carePlanResult !== null}
+          allowUpload
         />
-        <ExtractionPane
+        <SourcePanel
           title="Intake note"
           hint="social · type or dictate"
           value={intakeText}
           onChange={a.setIntakeText}
           onRun={a.runIntake}
           loading={r.intakeLoading}
-          result={r.intakeResult}
-          fallback={r.intakeCached}
+          done={r.intakeResult !== null}
           allowVoice
         />
       </div>
 
       {r.extracted && (
         <>
-          <ProfileCard profile={r.merged} onChange={a.setProfileEdits} />
+          <ProfileCard
+            profile={r.merged}
+            onChange={a.setProfileEdits}
+            revealedAt={r.revealedAt}
+          />
           <Link
             href={`/residents/${r.residentId}/pair`}
             className="group mt-6 inline-flex items-center gap-2 rounded-xl bg-accent px-5 py-3 text-caption font-medium text-white transition hover:bg-accent-deep"
