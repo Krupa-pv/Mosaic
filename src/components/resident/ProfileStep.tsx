@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, FileStack } from "lucide-react";
 import { useFlowActions, useFlowDocs, useFlowResults } from "./ResidentFlowProvider";
 import SourcePanel from "./SourcePanel";
 import ProfileCard from "../ProfileCard";
+import SectionHeader from "../ui/SectionHeader";
 
 export default function ProfileStep() {
   const { carePlanText, intakeText } = useFlowDocs();
@@ -23,7 +24,14 @@ export default function ProfileStep() {
         </p>
       </header>
 
-      <div className="mt-5 grid gap-4 xl:grid-cols-2">
+      <SectionHeader
+        icon={FileStack}
+        title="Source documents"
+        hint="care plan + intake note"
+        className="mt-5"
+      />
+
+      <div className="mt-3 grid gap-4 xl:grid-cols-2">
         <SourcePanel
           title="Care plan"
           hint="clinical · upload or paste"

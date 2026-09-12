@@ -48,9 +48,11 @@ export default function WeekCalendar({ events }: { events: SocialEvent[] }) {
           const list = onDay(day);
           return (
             <div key={day} className="flex flex-col">
-              <div className="border-b border-line pb-2">
-                <span className="eyebrow">{day.slice(0, 3)}</span>
-                <span className="ml-1.5 text-micro text-faint">
+              <div className="flex items-center gap-1.5 rounded-lg bg-accent-deep px-3 py-2 text-white">
+                <span className="text-micro font-semibold tracking-wide uppercase">
+                  {day.slice(0, 3)}
+                </span>
+                <span className="ml-auto text-micro text-white/70">
                   {list.length}
                 </span>
               </div>

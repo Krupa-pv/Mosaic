@@ -23,6 +23,7 @@ import type {
   SensoryLevel,
 } from "@shared/types";
 import { titleCase } from "@/lib/ui";
+import SectionHeader from "./ui/SectionHeader";
 
 // ============================================================
 // Ordered by how staff actually read it, not by where the data came
@@ -283,19 +284,9 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section
-      className={`px-6 py-5 ${last ? "" : "border-b border-accent/12"}`}
-    >
-      <div className="flex items-baseline gap-2">
-        <Icon
-          aria-hidden
-          className="h-3.5 w-3.5 shrink-0 translate-y-0.5 text-accent"
-          strokeWidth={2}
-        />
-        <h4 className="text-[12.5px] font-medium text-accent-deep">{title}</h4>
-        {hint && <span className="text-[10.5px] text-accent/60">{hint}</span>}
-      </div>
-      <div className="mt-3.5">{children}</div>
+    <section className={`px-5 py-5 ${last ? "" : "border-b border-accent/12"}`}>
+      <SectionHeader icon={Icon} title={title} hint={hint} />
+      <div className="mt-4">{children}</div>
     </section>
   );
 }

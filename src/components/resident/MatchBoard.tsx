@@ -7,6 +7,7 @@ import { findResident } from "@/lib/roster";
 import { HEX } from "@/lib/ui";
 import Avatar from "../ui/Avatar";
 import RiskBadge from "../ui/RiskBadge";
+import SectionHeader from "../ui/SectionHeader";
 import Tag from "../ui/Tag";
 
 type FilterKey = "all" | "shared" | "stable" | "morning";
@@ -146,12 +147,14 @@ export default function MatchBoard({
 
       {/* ---- Hard-filtered ---- */}
       {excluded.length > 0 && (
-        <div className="mt-6 rounded-2xl border border-line bg-surface p-5">
-          <p className="eyebrow flex items-center gap-1.5">
-            <Ban aria-hidden className="h-3 w-3" strokeWidth={2} />
-            Ruled out by a hard filter
-          </p>
-          <ul className="mt-3 space-y-2.5">
+        <div className="mt-6">
+          <SectionHeader
+            icon={Ban}
+            title="Ruled out by a hard filter"
+            tone="alert"
+            hint={`${excluded.length} residents`}
+          />
+          <ul className="mt-3 space-y-2.5 rounded-2xl border border-line bg-surface p-5">
             {excluded.map((c) => {
               const r = findResident(c.residentId);
               return (

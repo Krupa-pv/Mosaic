@@ -6,6 +6,7 @@ import { Grid3x3, Share2 } from "lucide-react";
 import type { FloorGraph as Graph } from "../../../lib/graph";
 import { allResidents } from "@/lib/roster";
 import PageContainer from "../ui/PageContainer";
+import SectionHeader from "../ui/SectionHeader";
 import Stat from "../ui/Stat";
 import CompatibilityMatrix from "./CompatibilityMatrix";
 import FloorGraph from "./FloorGraph";
@@ -82,7 +83,14 @@ export default function ConnectionsView({ graph }: { graph: Graph }) {
         )}
       </div>
 
-      <div className="mt-5">
+      <SectionHeader
+        icon={view === "graph" ? Share2 : Grid3x3}
+        title={view === "graph" ? "Connection map" : "Every pair scored"}
+        hint={`${graph.edges.length} pairs · ${blocked} ruled out`}
+        className="mt-5"
+      />
+
+      <div className="mt-3">
         {view === "graph" ? (
           <FloorGraph
             graph={graph}

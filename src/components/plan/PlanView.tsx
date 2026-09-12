@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { CalendarCheck, RefreshCw, Trash2, TriangleAlert } from "lucide-react";
+import { CalendarCheck, CalendarDays, RefreshCw, Trash2, TriangleAlert } from "lucide-react";
 import type { WeekPlan, PlannedPairing } from "../../../lib/planner";
 import { events } from "@shared/seed";
 import { allResidents, findResident } from "@/lib/roster";
@@ -11,6 +11,7 @@ import { recordAccepted, useAllAccepted } from "@/lib/accepted";
 import Avatar from "../ui/Avatar";
 import PageContainer from "../ui/PageContainer";
 import RiskBadge from "../ui/RiskBadge";
+import SectionHeader from "../ui/SectionHeader";
 import Stat from "../ui/Stat";
 import Tag from "../ui/Tag";
 
@@ -178,7 +179,7 @@ export default function PlanView() {
 
       {byDay.map(({ day, rows }) => (
         <section key={day} className="mt-8">
-          <h2 className="eyebrow border-b border-line pb-2.5">{day}</h2>
+          <SectionHeader icon={CalendarDays} title={day} hint={`${rows.length} ${rows.length === 1 ? "pairing" : "pairings"}`} />
           <ul className="mt-3 space-y-3">
             {rows.map((p) => {
               const subject = findResident(p.subjectId);
@@ -278,11 +279,8 @@ export default function PlanView() {
       ))}
 
       {plan && plan.unplaced.length > 0 && (
-        <section className="mt-10 rounded-2xl border border-line bg-surface p-5">
-          <p className="eyebrow flex items-center gap-1.5 text-high">
-            <TriangleAlert aria-hidden className="h-3 w-3" strokeWidth={2} />
-            Couldn&apos;t place
-          </p>
+        <section className="mt-10">
+          <SectionHeader icon={TriangleAlert} title="Couldn't place" tone="alert" />
           <ul className="mt-3 space-y-2">
             {plan.unplaced.map((u) => {
               const r = findResident(u.residentId);

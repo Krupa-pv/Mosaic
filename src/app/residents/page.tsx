@@ -1,10 +1,12 @@
 import Link from "next/link";
+import { Users } from "lucide-react";
 import { allResidents, historyFor } from "@/lib/roster";
 import { riskHex, trendLabel } from "@/lib/ui";
 import Sparkline from "@/components/Sparkline";
 import Avatar from "@/components/ui/Avatar";
 import PageContainer from "@/components/ui/PageContainer";
 import RiskBadge from "@/components/ui/RiskBadge";
+import SectionHeader from "@/components/ui/SectionHeader";
 import Stat from "@/components/ui/Stat";
 
 export default function RosterPage() {
@@ -32,12 +34,13 @@ export default function RosterPage() {
       </header>
 
       <div className="mt-10">
-        <div className="flex items-baseline justify-between border-b border-line pb-2.5">
-          <h2 className="eyebrow">Roster</h2>
-          <span className="text-micro text-faint">Ranked by isolation risk</span>
-        </div>
+        <SectionHeader
+          icon={Users}
+          title="Roster"
+          hint="Ranked by isolation risk"
+        />
 
-        <ul>
+        <ul className="mt-2">
           {sorted.map((r) => (
             <li key={r.id} className="border-b border-line-soft">
               <Link

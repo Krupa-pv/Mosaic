@@ -9,6 +9,7 @@ import {
   Moon,
   Sun,
   TrendingUp,
+  type LucideIcon,
 } from "lucide-react";
 import { allResidents, findResident } from "@/lib/roster";
 import { attendeesFor, dayNameOf, eventsOn } from "@/lib/schedule";
@@ -24,6 +25,7 @@ import Avatar from "./ui/Avatar";
 import AvatarStack from "./ui/AvatarStack";
 import PageContainer from "./ui/PageContainer";
 import RiskBadge from "./ui/RiskBadge";
+import SectionHeader from "./ui/SectionHeader";
 
 type Mode = "morning" | "evening";
 
@@ -339,23 +341,19 @@ function Evening({ today }: { today: string }) {
 /* ---------------- shared ---------------- */
 
 function Section({
-  icon: Icon,
+  icon,
   title,
   hint,
   children,
 }: {
-  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
+  icon: LucideIcon;
   title: string;
   hint?: string;
   children: React.ReactNode;
 }) {
   return (
     <section className="mt-10">
-      <div className="flex items-baseline gap-2.5 border-b border-line pb-2.5">
-        <Icon aria-hidden className="h-4 w-4 translate-y-0.5 text-accent" strokeWidth={1.75} />
-        <h2 className="text-body font-medium text-ink">{title}</h2>
-        {hint && <span className="text-micro text-faint">{hint}</span>}
-      </div>
+      <SectionHeader icon={icon} title={title} hint={hint} />
       <div className="mt-4">{children}</div>
     </section>
   );
