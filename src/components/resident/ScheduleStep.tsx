@@ -11,18 +11,42 @@ export default function ScheduleStep() {
   const r = useFlowResults();
   const a = useFlowActions();
 
+  const subject = findResident(r.residentId);
+
+  // Their week is worth seeing whether or not anyone has been paired
+  // with them — an empty week is the whole point of this product.
   if (!r.match || !r.prescription) {
     return (
-      <EmptyStep
-        title="No pairing yet"
-        body={`Once Mosaic has matched ${r.residentName} with a companion and found an activity that suits them both, their weeks appear here side by side.`}
-        href={`/residents/${r.residentId}/pair`}
-        cta="Find a companion"
-      />
+      <>
+        <header>
+          <h2 className="display text-title leading-tight text-ink">
+            {r.residentName}&apos;s week
+          </h2>
+          <p className="mt-1.5 max-w-prose text-caption leading-relaxed text-muted">
+            What they&apos;re already signed up for. Empty days are the gap a
+            pairing would fill.
+          </p>
+        </header>
+
+        {subject && (
+          <div className="mt-5">
+            <PairSchedule a={subject} b={subject} eventId="" solo />
+          </div>
+        )}
+
+        <div className="mt-6">
+          <EmptyStep
+            title="No companion yet"
+            body={`Mosaic can score every other resident against ${r.residentName}'s profile and find an activity that suits them both.`}
+            href={`/residents/${r.residentId}/pair`}
+            cta="Find a companion"
+          />
+        </div>
+      </>
     );
   }
 
-  const a1 = findResident(r.match.residentAId);
+  const a1 = subject ?? findResident(r.match.residentAId);
   const b1 = findResident(r.match.residentBId);
   const { event, status } = r.prescription;
 

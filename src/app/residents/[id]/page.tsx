@@ -1,12 +1,9 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowRight } from "lucide-react";
 import { findResident, floorAverage, historyFor } from "@/lib/roster";
-import { notesFor } from "@/lib/notes";
 import { riskHex, riskTone } from "@/lib/ui";
 import RiskTrajectory from "@/components/RiskTrajectory";
-import NoProfileYet from "@/components/resident/NoProfileYet";
 import ResidentInterventions from "@/components/resident/ResidentInterventions";
+import ProfileSpotlight from "@/components/resident/ProfileSpotlight";
 
 /** Overview: why this resident is flagged. The rail carries the score,
  *  so this leads with the trajectory and the drivers behind it. */
@@ -20,7 +17,6 @@ export default async function ResidentOverviewPage({
   if (!resident) notFound();
 
   const tone = riskTone(resident.riskLevel);
-  const hasNotes = Boolean(notesFor(id));
 
   return (
     <>
@@ -64,30 +60,7 @@ export default async function ResidentOverviewPage({
 
       <ResidentInterventions resident={resident} />
 
-      {hasNotes ? (
-        <Link
-          href={`/residents/${id}/profile`}
-          className="group mt-6 flex items-center gap-4 rounded-2xl border border-line bg-raised p-6 transition hover:border-accent/40"
-        >
-          <div className="min-w-0 flex-1">
-            <p className="text-body font-medium text-ink">
-              Build {resident.firstName}&apos;s social profile
-            </p>
-            <p className="mt-1 text-caption leading-relaxed text-muted">
-              Her care plan and intake note are on file. Mosaic can turn them
-              into interests, preferences and constraints — which sharpens
-              every option above.
-            </p>
-          </div>
-          <ArrowRight
-            aria-hidden
-            className="h-4 w-4 shrink-0 text-accent transition group-hover:translate-x-0.5"
-            strokeWidth={2}
-          />
-        </Link>
-      ) : (
-        <NoProfileYet firstName={resident.firstName} />
-      )}
+      <ProfileSpotlight residentId={id} firstName={resident.firstName} />
     </>
   );
 }

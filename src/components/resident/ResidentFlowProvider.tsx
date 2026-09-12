@@ -19,6 +19,7 @@ import {
   extractCarePlan,
   extractIntake,
   findBestMatch,
+  fetchProfile,
   findCandidates,
   recommendEvent,
   type MatchCandidate,
@@ -59,6 +60,9 @@ interface FlowState {
   eventLoading: boolean;
   /** When the profile reveal ran, so returning to the tab doesn't replay it. */
   revealedAt: number | null;
+  /** The profile already on file, loaded on mount. */
+  onFile: ResidentProfile | null;
+  onFileLoaded: boolean;
 }
 
 type Action =
@@ -78,7 +82,8 @@ type Action =
     }
   | { type: "eventStart" }
   | { type: "eventDone"; prescription: SocialPrescription }
-  | { type: "settle"; status: "accepted" | "declined" };
+  | { type: "settle"; status: "accepted" | "declined" }
+  | { type: "onFile"; profile: ResidentProfile | null };
 
 const initial: FlowState = {
   carePlanText: "",
@@ -97,6 +102,8 @@ const initial: FlowState = {
   prescription: null,
   eventLoading: false,
   revealedAt: null,
+  onFile: null,
+  onFileLoaded: false,
 };
 
 function reducer(state: FlowState, action: Action): FlowState {
@@ -143,6 +150,8 @@ function reducer(state: FlowState, action: Action): FlowState {
       return { ...state, eventLoading: true };
     case "eventDone":
       return { ...state, eventLoading: false, prescription: action.prescription };
+    case "onFile":
+      return { ...state, onFile: action.profile, onFileLoaded: true };
     case "settle":
       return {
         ...state,
@@ -182,7 +191,10 @@ interface Results {
   eventLoading: boolean;
   revealedAt: number | null;
   merged: ResidentProfile;
+  /** True once there is any profile to show — on file or extracted. */
   extracted: boolean;
+  /** True when this resident had no profile before this session. */
+  needsProfile: boolean;
   settled: boolean;
 }
 
@@ -231,12 +243,41 @@ export default function ResidentFlowProvider({
     intakeText: initialIntakeText,
   });
 
-  const merged = useMemo(
-    () =>
-      state.profileEdits ??
-      mergeProfile(residentId, state.carePlanResult, state.intakeResult),
-    [state.profileEdits, residentId, state.carePlanResult, state.intakeResult]
-  );
+  // Staff edits win, then anything extracted this session, then the
+  // profile already on file. A resident who has been profiled before
+  // opens straight into it — extraction is for updating, not for
+  // rebuilding from scratch every visit.
+  const merged = useMemo(() => {
+    if (state.profileEdits) return state.profileEdits;
+    const extractedNow =
+      state.carePlanResult !== null || state.intakeResult !== null;
+    if (!extractedNow && state.onFile) return state.onFile;
+    const fresh = mergeProfile(
+      residentId,
+      state.carePlanResult,
+      state.intakeResult
+    );
+    if (!state.onFile) return fresh;
+    // An update should not blank fields the new document didn't mention.
+    return {
+      ...state.onFile,
+      ...fresh,
+      careNeeds: { ...state.onFile.careNeeds, ...fresh.careNeeds },
+      interests: fresh.interests.length ? fresh.interests : state.onFile.interests,
+      personality: { ...state.onFile.personality, ...fresh.personality },
+      socialPreferences: {
+        ...state.onFile.socialPreferences,
+        ...fresh.socialPreferences,
+      },
+      personalityNote: fresh.personalityNote ?? state.onFile.personalityNote,
+    };
+  }, [
+    state.profileEdits,
+    state.onFile,
+    residentId,
+    state.carePlanResult,
+    state.intakeResult,
+  ]);
 
   const docs = useMemo<Docs>(
     () => ({ carePlanText: state.carePlanText, intakeText: state.intakeText }),
@@ -261,7 +302,15 @@ export default function ResidentFlowProvider({
       eventLoading: state.eventLoading,
       revealedAt: state.revealedAt,
       merged,
-      extracted: state.carePlanResult !== null || state.intakeResult !== null,
+      extracted:
+        state.onFile !== null ||
+        state.carePlanResult !== null ||
+        state.intakeResult !== null,
+      needsProfile:
+        state.onFileLoaded &&
+        state.onFile === null &&
+        state.carePlanResult === null &&
+        state.intakeResult === null,
       settled:
         state.prescription?.status === "accepted" ||
         state.prescription?.status === "declined",
@@ -282,6 +331,8 @@ export default function ResidentFlowProvider({
       state.prescription,
       state.eventLoading,
       state.revealedAt,
+      state.onFile,
+      state.onFileLoaded,
       merged,
     ]
   );
@@ -289,6 +340,16 @@ export default function ResidentFlowProvider({
   // Actions must keep a stable identity or every consumer re-renders on
   // each keystroke. They read current state through a ref updated after
   // render — safe because actions only ever fire from event handlers.
+  useEffect(() => {
+    let cancelled = false;
+    fetchProfile(residentId).then((p) => {
+      if (!cancelled) dispatch({ type: "onFile", profile: p });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [residentId]);
+
   const latestRef = useRef({ merged, state });
   useEffect(() => {
     latestRef.current = { merged, state };

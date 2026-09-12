@@ -2,17 +2,20 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Grid3x3, Share2 } from "lucide-react";
+import { Grid3x3, Share2, Users } from "lucide-react";
 import type { FloorGraph as Graph } from "../../../lib/graph";
 import { allResidents } from "@/lib/roster";
 import PageContainer from "../ui/PageContainer";
 import SectionHeader from "../ui/SectionHeader";
 import Stat from "../ui/Stat";
+import { buildConnections } from "@/lib/connections";
 import CompatibilityMatrix from "./CompatibilityMatrix";
+import RecentConnections from "./RecentConnections";
 import FloorGraph from "./FloorGraph";
 
 export default function ConnectionsView({ graph }: { graph: Graph }) {
-  const [view, setView] = useState<"matrix" | "graph">("graph");
+  const [view, setView] = useState<"recent" | "matrix" | "graph">("recent");
+  const recent = buildConnections();
   const router = useRouter();
 
   const blocked = graph.edges.filter((e) => e.blockedBy).length;
@@ -29,20 +32,33 @@ export default function ConnectionsView({ graph }: { graph: Graph }) {
     <PageContainer width="wide">
       <header className="flex flex-wrap items-end justify-between gap-x-10 gap-y-6">
         <div>
-          <p className="eyebrow">Floor 2 · every pair scored</p>
+          <p className="eyebrow">Floor 2</p>
           <h1 className="display mt-2 text-headline text-ink">
             The shape of the floor
           </h1>
           <p className="mt-2 max-w-prose text-caption leading-relaxed text-muted">
-            Compatibility between all {allResidents.length} residents, scored by
-            the same deterministic function that drives every recommendation.
-            Recomputed from current profiles each time this page loads.
+            Who is actually seeing whom, and who would get on if they did.
+            Recomputed from current rosters and profiles each time this page
+            loads.
           </p>
         </div>
         <dl className="flex gap-8">
-          <Stat label="Pairs scored" value={graph.edges.length} />
-          <Stat label="Strong matches" value={strong} tone="text-accent" />
-          <Stat label="Ruled out" value={blocked} tone="text-high" />
+          {view === "recent" ? (
+            <>
+              <Stat label="Pairs met" value={recent.connections.length} tone="text-accent" />
+              <Stat
+                label="Sessions shared"
+                value={recent.connections.reduce((s, c) => s + c.times, 0)}
+              />
+              <Stat label="Barely seen" value={recent.isolated.length} tone="text-high" />
+            </>
+          ) : (
+            <>
+              <Stat label="Pairs scored" value={graph.edges.length} />
+              <Stat label="Strong matches" value={strong} tone="text-accent" />
+              <Stat label="Ruled out" value={blocked} tone="text-high" />
+            </>
+          )}
         </dl>
       </header>
 
@@ -54,7 +70,8 @@ export default function ConnectionsView({ graph }: { graph: Graph }) {
         >
           {(
             [
-              ["graph", "Connections", Share2],
+              ["recent", "Recent connections", Users],
+              ["graph", "Compatibility", Share2],
               ["matrix", "Every pair", Grid3x3],
             ] as const
           ).map(([key, label, Icon]) => (
@@ -75,23 +92,47 @@ export default function ConnectionsView({ graph }: { graph: Graph }) {
           ))}
         </div>
 
-        {loneliestName && (
-          <p className="text-caption text-muted">
-            <strong className="font-medium text-high">{loneliestName}</strong>{" "}
-            has the fewest strong options on the floor — {loneliest.degree}.
-          </p>
-        )}
+        {view === "recent"
+          ? recent.isolated.length > 0 && (
+              <p className="text-caption text-muted">
+                <strong className="font-medium text-high">
+                  {recent.isolated
+                    .map((id) => allResidents.find((r) => r.id === id)?.firstName)
+                    .filter(Boolean)
+                    .join(", ")}
+                </strong>{" "}
+                barely saw anyone this week.
+              </p>
+            )
+          : loneliestName && (
+              <p className="text-caption text-muted">
+                <strong className="font-medium text-high">{loneliestName}</strong>{" "}
+                has the fewest strong options on the floor — {loneliest.degree}.
+              </p>
+            )}
       </div>
 
       <SectionHeader
-        icon={view === "graph" ? Share2 : Grid3x3}
-        title={view === "graph" ? "Connection map" : "Every pair scored"}
-        hint={`${graph.edges.length} pairs · ${blocked} ruled out`}
+        icon={view === "recent" ? Users : view === "graph" ? Share2 : Grid3x3}
+        title={
+          view === "recent"
+            ? `Who has spent time together · last ${recent.windowDays} days`
+            : view === "graph"
+              ? "Who would get on · compatibility"
+              : "Every pair scored"
+        }
+        hint={
+          view === "recent"
+            ? `${recent.connections.length} pairs met · ${recent.isolated.length} barely saw anyone`
+            : `${graph.edges.length} pairs · ${blocked} ruled out`
+        }
         className="mt-5"
       />
 
       <div className="mt-3">
-        {view === "graph" ? (
+        {view === "recent" ? (
+          <RecentConnections onSelect={(id) => router.push(`/residents/${id}`)} />
+        ) : view === "graph" ? (
           <FloorGraph
             graph={graph}
             onSelect={(id) => router.push(`/residents/${id}`)}

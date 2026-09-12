@@ -2,7 +2,15 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { CalendarCheck, CalendarDays, RefreshCw, Trash2, TriangleAlert } from "lucide-react";
+import {
+  CalendarCheck,
+  CalendarDays,
+  RefreshCw,
+  Sparkles,
+  Trash2,
+  TriangleAlert,
+  Users,
+} from "lucide-react";
 import type { WeekPlan, PlannedPairing } from "../../../lib/planner";
 import { events } from "@shared/seed";
 import { allResidents, findResident } from "@/lib/roster";
@@ -14,6 +22,9 @@ import RiskBadge from "../ui/RiskBadge";
 import SectionHeader from "../ui/SectionHeader";
 import Stat from "../ui/Stat";
 import Tag from "../ui/Tag";
+import RecentConnections from "../connections/RecentConnections";
+import { buildConnections } from "@/lib/connections";
+import { findInterestGaps } from "@/lib/gaps";
 
 const DAYS = [
   "Daily",
@@ -94,9 +105,9 @@ export default function PlanView() {
     setLoading(false);
   }
 
-  const kept = (plan?.pairings ?? []).filter(
-    (p) => !dropped.has(key(p))
-  );
+  const kept = (plan?.pairings ?? []).filter((p) => !dropped.has(key(p)));
+  const { isolated } = useMemo(() => buildConnections(), []);
+  const gaps = useMemo(() => findInterestGaps(), []);
 
   const byDay = DAYS.map((day) => ({
     day,
@@ -115,12 +126,12 @@ export default function PlanView() {
   }
 
   return (
-    <PageContainer>
+    <PageContainer width="wide">
       <header className="flex flex-wrap items-end justify-between gap-x-10 gap-y-6">
         <div>
-          <p className="eyebrow">Floor 2 · generated just now</p>
+          <p className="eyebrow">Your floor · generated just now</p>
           <h1 className="display mt-2 text-headline text-ink">
-            This week&apos;s plan
+            Next week&apos;s plan
           </h1>
           <p className="mt-2 max-w-prose text-caption leading-relaxed text-muted">
             One pairing for every resident Mosaic is watching, placed on an
@@ -166,8 +177,59 @@ export default function PlanView() {
         )}
       </div>
 
+      <div className="mt-8 grid gap-6 xl:grid-cols-[minmax(0,400px)_minmax(0,1fr)]">
+        <aside className="xl:sticky xl:top-6 xl:self-start">
+          <SectionHeader
+            icon={Users}
+            title="Who's been together"
+            hint="last 7 days"
+          />
+          <div className="mt-3">
+            <RecentConnections compact />
+          </div>
+          {isolated.length > 0 && (
+            <p className="mt-3 rounded-xl bg-high-soft px-4 py-3 text-caption leading-relaxed text-high">
+              <strong className="font-semibold">
+                {isolated
+                  .map((id) => findResident(id)?.firstName)
+                  .filter(Boolean)
+                  .join(" and ")}
+              </strong>{" "}
+              barely saw anyone this week. The plan places them first.
+            </p>
+          )}
+
+          <SectionHeader
+            icon={Sparkles}
+            title="Worth adding"
+            hint="from shared interests"
+            className="mt-6"
+          />
+          <ul className="mt-3 space-y-2">
+            {gaps.map((g) => (
+              <li
+                key={g.interest}
+                className="rounded-xl border border-line bg-raised px-5 py-3.5"
+              >
+                <p className="text-body text-ink">{g.suggestion}</p>
+                <p className="mt-1 text-caption text-muted">
+                  {g.count} residents list {g.interest}, and nothing on the
+                  calendar covers it.
+                </p>
+              </li>
+            ))}
+            {gaps.length === 0 && (
+              <li className="rounded-xl border border-dashed border-line bg-surface px-5 py-4 text-caption text-muted">
+                Every interest on the floor is covered by something already on
+                the calendar.
+              </li>
+            )}
+          </ul>
+        </aside>
+
+        <div className="min-w-0">
       {loading && (
-        <p className="mt-8 text-body text-muted">Scoring the floor…</p>
+        <p className="text-body text-muted">Scoring the floor…</p>
       )}
 
       {!loading && kept.length === 0 && (
@@ -277,6 +339,9 @@ export default function PlanView() {
           </ul>
         </section>
       ))}
+
+        </div>
+      </div>
 
       {plan && plan.unplaced.length > 0 && (
         <section className="mt-10">

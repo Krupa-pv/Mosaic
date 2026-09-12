@@ -88,6 +88,19 @@ export async function extractIntake(
   return { data: intakeFallback(residentId), source: "fallback" };
 }
 
+/** The profile already on file, if this resident has been profiled. */
+export async function fetchProfile(
+  residentId: string
+): Promise<ResidentProfile | null> {
+  try {
+    const res = await fetch(`/api/profile/${residentId}`);
+    if (!res.ok) return null;
+    return (await res.json()) as ResidentProfile;
+  } catch {
+    return profilesById[residentId] ?? null;
+  }
+}
+
 // ---- Matching ----
 
 export async function findBestMatch(

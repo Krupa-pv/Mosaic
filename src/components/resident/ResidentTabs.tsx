@@ -12,14 +12,14 @@ import { useFlowResults } from "./ResidentFlowProvider";
  */
 export default function ResidentTabs({ residentId }: { residentId: string }) {
   const pathname = usePathname();
-  const { extracted, match } = useFlowResults();
+  const { extracted } = useFlowResults();
   const base = `/residents/${residentId}`;
 
   const tabs = [
     { href: base, label: "Overview", ready: true },
     { href: `${base}/profile`, label: "Profile", ready: true },
     { href: `${base}/pair`, label: "Companion", ready: extracted },
-    { href: `${base}/schedule`, label: "Schedule", ready: Boolean(match) },
+    { href: `${base}/schedule`, label: "Schedule", ready: true },
     { href: `${base}/history`, label: "History", ready: true },
   ];
 

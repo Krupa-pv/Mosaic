@@ -37,11 +37,21 @@ export default function PairSchedule({
   a,
   b,
   eventId,
+  solo = false,
 }: {
   a: Resident;
   b: Resident;
   eventId: string;
+  /** One week only — used before a companion has been chosen. */
+  solo?: boolean;
 }) {
+  if (solo) {
+    return (
+      <div className="max-w-xl">
+        <Calendar resident={a} eventId={eventId} />
+      </div>
+    );
+  }
   return (
     <div className="mt-5 grid gap-4 lg:grid-cols-2">
       <Calendar resident={a} eventId={eventId} />
