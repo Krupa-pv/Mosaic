@@ -88,11 +88,17 @@ export async function extractIntake(
 
 export async function findBestMatch(
   residentId: string,
-  profile: ResidentProfile
+  profile: ResidentProfile,
+  /** Staff override — pair with this resident instead of the top-scored one. */
+  companionId?: string
 ): Promise<Sourced<ResidentMatch>> {
-  const live = await post<ResidentMatch>("/api/match", { residentId, profile });
+  const live = await post<ResidentMatch>("/api/match", {
+    residentId,
+    profile,
+    companionId,
+  });
   if (live) return { data: live, source: "live" };
-  return { data: matchFallback(residentId), source: "fallback" };
+  return { data: matchFallback(residentId, companionId), source: "fallback" };
 }
 
 export async function findCandidates(
@@ -110,9 +116,16 @@ export async function findCandidates(
 // ---- Event recommendation ----
 
 export async function recommendEvent(
-  match: ResidentMatch
+  match: ResidentMatch,
+  /** The live, staff-edited profile. Without it the server scores event
+   *  fit against its hardcoded seed copy and silently ignores every edit
+   *  made in the UI. */
+  profileA?: ResidentProfile
 ): Promise<Sourced<SocialPrescription>> {
-  const live = await post<SocialPrescription>("/api/recommend", { match });
+  const live = await post<SocialPrescription>("/api/recommend", {
+    match,
+    profileA,
+  });
   if (live) return { data: live, source: "live" };
   return { data: prescriptionFallback(match), source: "fallback" };
 }
@@ -170,11 +183,11 @@ function intakeFallback(residentId: string): ExtractionResponse {
   };
 }
 
-function matchFallback(residentId: string): ResidentMatch {
+function matchFallback(residentId: string, companionId = "helen"): ResidentMatch {
   return {
-    id: `${residentId}-helen`,
+    id: `${residentId}-${companionId}`,
     residentAId: residentId,
-    residentBId: "helen",
+    residentBId: companionId,
     // Regenerated from the real scorer so a fallback render is
     // indistinguishable from a live one. Do not hand-edit — run
     // `npm run verify:matching` and copy what it prints.
