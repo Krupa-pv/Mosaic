@@ -1,12 +1,15 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ArrowRight } from "lucide-react";
 import { findResident, floorAverage, historyFor } from "@/lib/roster";
 import { notesFor } from "@/lib/notes";
-import { riskHex, riskTone, trendLabel } from "@/lib/ui";
+import { riskHex, riskTone } from "@/lib/ui";
 import RiskTrajectory from "@/components/RiskTrajectory";
-import ResidentWorkspace from "@/components/ResidentWorkspace";
 import NoProfileYet from "@/components/resident/NoProfileYet";
 
-export default async function ResidentPage({
+/** Overview: why this resident is flagged. The rail carries the score,
+ *  so this leads with the trajectory and the drivers behind it. */
+export default async function ResidentOverviewPage({
   params,
 }: {
   params: Promise<{ id: string }>;
@@ -16,29 +19,20 @@ export default async function ResidentPage({
   if (!resident) notFound();
 
   const tone = riskTone(resident.riskLevel);
+  const hasNotes = Boolean(notesFor(id));
 
   return (
     <>
-      {/* ---- Step 1: risk explained (static, no live engine) ---- */}
       <section className="overflow-hidden rounded-2xl border border-line bg-raised">
-        <div className="flex flex-wrap items-end gap-x-12 gap-y-6 p-7">
-          <div>
-            <p className="eyebrow">Isolation risk</p>
-            <div className="mt-2.5 flex items-baseline gap-3">
-              <span className="display text-display leading-none tabular-nums text-ink">
-                {resident.riskScore}
-              </span>
-              <span
-                className={`text-caption font-medium ${
-                  resident.riskTrend > 0 ? "text-high" : "text-low"
-                }`}
-              >
-                {trendLabel(resident.riskTrend)}
-              </span>
-            </div>
-          </div>
-
-          <div className="min-w-[280px] flex-1">
+        <div className="p-7">
+          <h2 className="display text-title leading-tight text-ink">
+            Six weeks of drift
+          </h2>
+          <p className="mt-1.5 max-w-prose text-caption leading-relaxed text-muted">
+            {resident.firstName}&apos;s isolation risk against the floor
+            average.
+          </p>
+          <div className="mt-5">
             <RiskTrajectory
               values={historyFor(resident.id)}
               average={floorAverage()}
@@ -67,9 +61,26 @@ export default async function ResidentPage({
         </div>
       </section>
 
-      {/* ---- Steps 2-4 ---- */}
-      {notesFor(id) ? (
-        <ResidentWorkspace />
+      {hasNotes ? (
+        <Link
+          href={`/residents/${id}/profile`}
+          className="group mt-6 flex items-center gap-4 rounded-2xl border border-line bg-raised p-6 transition hover:border-accent/40"
+        >
+          <div className="min-w-0 flex-1">
+            <p className="text-body font-medium text-ink">
+              Build {resident.firstName}&apos;s social profile
+            </p>
+            <p className="mt-1 text-caption leading-relaxed text-muted">
+              Her care plan and intake note are on file. Mosaic can turn them
+              into interests, preferences and constraints.
+            </p>
+          </div>
+          <ArrowRight
+            aria-hidden
+            className="h-4 w-4 shrink-0 text-accent transition group-hover:translate-x-0.5"
+            strokeWidth={2}
+          />
+        </Link>
       ) : (
         <NoProfileYet firstName={resident.firstName} />
       )}

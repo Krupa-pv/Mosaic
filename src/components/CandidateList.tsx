@@ -11,9 +11,12 @@ import { initials } from "@/lib/ui";
 export default function CandidateList({
   candidates,
   selectedId,
+  onChoose,
 }: {
   candidates: MatchCandidate[];
   selectedId: string;
+  /** Staff override — pair with this candidate instead of the top scorer. */
+  onChoose?: (residentId: string) => void;
 }) {
   const considered = candidates.filter((c) => !c.filtered);
   const filtered = candidates.filter((c) => c.filtered);
@@ -69,6 +72,17 @@ export default function CandidateList({
                   {c.note}
                 </p>
               </div>
+
+              {/* Staff know things the scorer doesn't — let them override. */}
+              {onChoose && !best && (
+                <button
+                  type="button"
+                  onClick={() => onChoose(c.residentId)}
+                  className="shrink-0 rounded-lg px-2.5 py-1.5 text-micro font-medium text-accent transition hover:bg-accent-soft"
+                >
+                  Pair instead
+                </button>
+              )}
 
               <div className="w-16 shrink-0">
                 <div className="h-[3px] w-full overflow-hidden rounded-full bg-line">

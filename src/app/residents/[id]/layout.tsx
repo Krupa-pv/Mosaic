@@ -3,6 +3,7 @@ import { findResident } from "@/lib/roster";
 import { notesFor } from "@/lib/notes";
 import ResidentFlowProvider from "@/components/resident/ResidentFlowProvider";
 import SummaryRail from "@/components/resident/SummaryRail";
+import ResidentTabs from "@/components/resident/ResidentTabs";
 
 // This layout is what makes the subpage split possible: Next preserves a
 // layout's client state across sibling child routes, so the flow provider
@@ -34,7 +35,10 @@ export default async function ResidentLayout({
         <aside>
           <SummaryRail resident={resident} />
         </aside>
-        <div className="min-w-0">{children}</div>
+        <div className="min-w-0">
+          <ResidentTabs residentId={resident.id} />
+          {children}
+        </div>
       </div>
     </ResidentFlowProvider>
   );
