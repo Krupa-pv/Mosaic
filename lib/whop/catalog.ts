@@ -16,12 +16,11 @@ interface ProductSpec {
   kind: ProductKind;
 }
 
-// Two Nursing Homes products exist. The newer one is what .env.local
-// points at; the older one still carries live memberships, so both grant
-// facility access and neither can be dropped yet.
+// The older Nursing Homes product, prod_UBbrTBEoC3xQW, is retired. Its
+// memberships no longer grant access. Its plans are gone from PLANS too,
+// so a lapsed one resolves to an unknown plan rather than a known tier.
 export const PRODUCTS: Record<string, ProductSpec> = {
   prod_l7zWolodBoxKz: { name: "Mosaic for Nursing Homes", kind: "facility" },
-  prod_UBbrTBEoC3xQW: { name: "Mosaic for Nursing Homes (legacy)", kind: "facility" },
   prod_xuhpewe0Fs48C: { name: "Mosaic for Family", kind: "family" },
 };
 
@@ -36,16 +35,11 @@ interface PlanSpec {
 }
 
 export const PLANS: Record<string, PlanSpec> = {
-  // prod_l7zWolodBoxKz — current pricing. These carry no metadata.tier,
-  // so the mapping is by price, ascending.
+  // prod_l7zWolodBoxKz — the three buying plans. These carry no
+  // metadata.tier, so the mapping is by price, ascending.
   plan_i9jMQwnkfaypN: { tier: "starter", monthly: 29.99, oneTime: false },
   plan_bSwFF2ondz53F: { tier: "basic", monthly: 39.99, oneTime: false },
   plan_fZrkKlznGRj8N: { tier: "growth", monthly: 79.99, oneTime: false },
-
-  // prod_UBbrTBEoC3xQW — legacy pricing, still has live memberships.
-  plan_NmK4hEHqqlTno: { tier: "starter", monthly: 0, oneTime: true },
-  plan_VWvT23IssuzF3: { tier: "basic", monthly: 199, oneTime: false },
-  plan_0SATrHJQFp1SF: { tier: "growth", monthly: 499, oneTime: false },
 
   // prod_xuhpewe0Fs48C
   plan_hswCD4Xon07jE: { tier: "family", monthly: 20, oneTime: false },
@@ -101,9 +95,12 @@ export function accessFor(status?: string, planId?: string): AccessDecision {
       // "completed" has ended.
       const plan = planId ? PLANS[planId] : undefined;
       if (!plan) {
-        // Unknown plan: grant, so an unlisted one-time plan does not lock a
-        // paying facility out mid-demo. The cost of being wrong is a
-        // lapsed renewal keeping access, not a stranger getting in.
+        // Every plan in PLANS is now a renewal plan, so this branch only
+        // fires for a plan created in the dashboard that nobody has added
+        // here. It grants, because a free one-time test plan is the likely
+        // reason for one, and locking a facility out mid-demo is worse than
+        // a lapsed renewal keeping access. The warning is the signal to add
+        // the plan to PLANS.
         console.warn(`[catalog] "completed" on unknown plan ${planId ?? "(none)"} — granting`);
         return "grant";
       }

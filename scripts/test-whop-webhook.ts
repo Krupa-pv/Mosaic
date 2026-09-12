@@ -27,9 +27,8 @@ if (!SECRET) {
 }
 
 const FACILITY = "prod_l7zWolodBoxKz";
-const FACILITY_LEGACY = "prod_UBbrTBEoC3xQW";
+const RETIRED = "prod_UBbrTBEoC3xQW";
 const FAMILY = "prod_xuhpewe0Fs48C";
-const PLAN_STARTER_ONETIME = "plan_NmK4hEHqqlTno"; // legacy, free, one_time
 const PLAN_STARTER = "plan_i9jMQwnkfaypN"; // $29.99/mo
 const PLAN_GROWTH = "plan_fZrkKlznGRj8N"; // $79.99/mo
 const PLAN_FAMILY = "plan_hswCD4Xon07jE";
@@ -119,15 +118,14 @@ async function main() {
   check("family tier", f.json?.subscriber?.tier, "family");
   check("no tenant created", f.json?.tenant, undefined);
 
-  console.log("\n--- legacy free Starter is one_time: completed still grants ---");
-  const starterMem = `mem_start_${randomUUID().slice(0, 6)}`;
+  console.log("\n--- retired product provisions nothing ---");
   const s = await send(
     membershipEvent("membership.activated", {
-      membership: starterMem, product: FACILITY_LEGACY, plan: PLAN_STARTER_ONETIME, status: "completed",
+      membership: "mem_legacy", product: RETIRED, plan: "plan_NmK4hEHqqlTno", status: "completed",
     }),
   );
-  check("tenant active", s.json?.tenant?.status, "active");
-  check("starter tier", s.json?.tenant?.tier, "starter");
+  check("returns 200", s.status, 200);
+  check("ignored as unknown product", s.json?.ignored, "unknown product");
 
   console.log("\n--- renewal plan reaching completed means ENDED, revoke ---");
   const endedMem = `mem_ended_${randomUUID().slice(0, 6)}`;
