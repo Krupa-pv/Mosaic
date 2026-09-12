@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+/* Light-only on purpose: the demo is screen-recorded, and an OS-level
+   dark-mode flip mid-recording is a risk with zero upside. */
+:root {
+  color-scheme: light;
+  --background: #f7f6f3;
+  --foreground: #1c1917;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+@keyframes kw-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.kw-rise {
+  animation: kw-rise 0.35s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kw-rise {
+    animation: none;
+  }
+}

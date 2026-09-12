@@ -1,0 +1,180 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import type {
+  ExtractionResponse,
+  ResidentMatch,
+  ResidentProfile,
+  SocialPrescription,
+} from "@shared/types";
+import { extractCarePlan, extractIntake, findBestMatch, recommendEvent } from "@/lib/api";
+import { mergeProfile } from "@/lib/ui";
+import ExtractionPane from "./ExtractionPane";
+import ProfileCard from "./ProfileCard";
+import RecommendationCard from "./RecommendationCard";
+
+export default function ResidentWorkspace({
+  residentId,
+  residentName,
+  initialCarePlanText,
+  initialIntakeText,
+}: {
+  residentId: string;
+  residentName: string;
+  initialCarePlanText: string;
+  initialIntakeText: string;
+}) {
+  // ---- Stage 2: extraction ----
+  const [carePlanText, setCarePlanText] = useState(initialCarePlanText);
+  const [intakeText, setIntakeText] = useState(initialIntakeText);
+  const [carePlanResult, setCarePlanResult] = useState<ExtractionResponse | null>(null);
+  const [intakeResult, setIntakeResult] = useState<ExtractionResponse | null>(null);
+  const [carePlanLoading, setCarePlanLoading] = useState(false);
+  const [intakeLoading, setIntakeLoading] = useState(false);
+  const [carePlanCached, setCarePlanCached] = useState(false);
+  const [intakeCached, setIntakeCached] = useState(false);
+
+  // Edits made by staff to the merged profile win over the extraction.
+  const [profileEdits, setProfileEdits] = useState<ResidentProfile | null>(null);
+
+  // ---- Stages 3-4: matching + prescription ----
+  const [match, setMatch] = useState<ResidentMatch | null>(null);
+  const [matchLoading, setMatchLoading] = useState(false);
+  const [matchCached, setMatchCached] = useState(false);
+  const [prescription, setPrescription] = useState<SocialPrescription | null>(null);
+  const [eventLoading, setEventLoading] = useState(false);
+
+  const extracted = carePlanResult !== null || intakeResult !== null;
+
+  const merged = useMemo(
+    () => profileEdits ?? mergeProfile(residentId, carePlanResult, intakeResult),
+    [profileEdits, residentId, carePlanResult, intakeResult]
+  );
+
+  async function runCarePlan() {
+    setCarePlanLoading(true);
+    const { data, source } = await extractCarePlan(residentId, carePlanText);
+    setCarePlanResult(data);
+    setCarePlanCached(source === "fallback");
+    setProfileEdits(null);
+    setCarePlanLoading(false);
+  }
+
+  async function runIntake() {
+    setIntakeLoading(true);
+    const { data, source } = await extractIntake(residentId, intakeText);
+    setIntakeResult(data);
+    setIntakeCached(source === "fallback");
+    setProfileEdits(null);
+    setIntakeLoading(false);
+  }
+
+  async function runMatch() {
+    setMatchLoading(true);
+    setPrescription(null);
+    const { data, source } = await findBestMatch(residentId, merged);
+    setMatch(data);
+    setMatchCached(source === "fallback");
+    setMatchLoading(false);
+
+    // The pair is only useful with somewhere to put them — chain straight
+    // into the event recommendation so the card lands complete.
+    setEventLoading(true);
+    const rec = await recommendEvent(data);
+    setPrescription(rec.data);
+    setEventLoading(false);
+  }
+
+  function settle(status: "accepted" | "declined") {
+    setPrescription((p) =>
+      p ? { ...p, status, match: { ...p.match, status } } : p
+    );
+    setMatch((m) => (m ? { ...m, status } : m));
+  }
+
+  return (
+    <>
+      {/* ---- Step 2: build the profile ---- */}
+      <section className="mt-6">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-500">
+          Understand who she is
+        </h2>
+        <p className="mt-1 text-sm text-stone-600">
+          Unstructured notes in, structured profile out. Nothing here was typed
+          into a form by staff.
+        </p>
+
+        <div className="mt-4 grid gap-4 lg:grid-cols-2">
+          <ExtractionPane
+            title="Care plan"
+            hint="clinical"
+            value={carePlanText}
+            onChange={setCarePlanText}
+            onRun={runCarePlan}
+            loading={carePlanLoading}
+            result={carePlanResult}
+            fallback={carePlanCached}
+          />
+          <ExtractionPane
+            title="Intake note"
+            hint="social · type or dictate"
+            value={intakeText}
+            onChange={setIntakeText}
+            onRun={runIntake}
+            loading={intakeLoading}
+            result={intakeResult}
+            fallback={intakeCached}
+            allowVoice
+          />
+        </div>
+
+        {extracted && (
+          <ProfileCard profile={merged} onChange={setProfileEdits} />
+        )}
+      </section>
+
+      {/* ---- Steps 3-4: match + prescribe ---- */}
+      {extracted && (
+        <section className="mt-8 pb-16">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-500">
+            Prescribe a connection
+          </h2>
+          <p className="mt-1 text-sm text-stone-600">
+            Kinwell scores every other resident against {residentName}&apos;s
+            profile, then finds an activity that works for both.
+          </p>
+
+          {!match && (
+            <button
+              type="button"
+              onClick={runMatch}
+              disabled={matchLoading}
+              className="mt-4 inline-flex items-center gap-2 rounded-lg bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:opacity-60"
+            >
+              {matchLoading && (
+                <span
+                  aria-hidden
+                  className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white"
+                />
+              )}
+              {matchLoading
+                ? "Scoring residents…"
+                : `Find a companion for ${residentName}`}
+            </button>
+          )}
+
+          {match && (
+            <RecommendationCard
+              match={match}
+              prescription={prescription}
+              loadingEvent={eventLoading}
+              fallback={matchCached}
+              onAccept={() => settle("accepted")}
+              onDecline={() => settle("declined")}
+            />
+          )}
+        </section>
+      )}
+    </>
+  );
+}
