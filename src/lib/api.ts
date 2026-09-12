@@ -175,14 +175,17 @@ function matchFallback(residentId: string): ResidentMatch {
     id: `${residentId}-helen`,
     residentAId: residentId,
     residentBId: "helen",
-    score: 91,
+    // Regenerated from the real scorer so a fallback render is
+    // indistinguishable from a live one. Do not hand-edit — run
+    // `npm run verify:matching` and copy what it prints.
+    score: 92,
     components: {
-      interests: 88,
+      interests: 78,
       socialPreferences: 100,
-      careCompatibility: 95,
+      careCompatibility: 100,
       schedule: 100,
-      personality: 72,
-      complementaryTraits: 94,
+      personality: 85,
+      complementaryTraits: 100,
     },
     rationale: margaretHelenRationale,
     status: "suggested",
@@ -196,18 +199,18 @@ function candidatesFallback(): MatchCandidate[] {
   return [
     {
       residentId: "helen",
-      score: 91,
-      note: "Shared gardening interest, same small-group preference, both mornings.",
+      score: 92,
+      note: "Shares gardening, same group size and time of day, complementary conversational styles.",
     },
     {
       residentId: "frances",
-      score: 74,
-      note: "Compatible pace and group size, but no overlapping interests.",
+      score: 71,
+      note: "No overlapping interests, same group size and time of day, complementary conversational styles.",
     },
     {
       residentId: "yolanda",
-      score: 66,
-      note: "Socially active and welcoming — her week centres on reading, not gardening.",
+      score: 65,
+      note: "No overlapping interests, same group-size preference, complementary conversational styles.",
     },
     {
       residentId: "dorothy",
