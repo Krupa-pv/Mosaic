@@ -11,10 +11,10 @@ npm run dev     # http://localhost:3000
 
 ## The demo path (definition of done)
 
-Dashboard → Margaret → risk explained → extract care plan + intake →
-merged profile → find a companion → Helen at 91 → Indoor Garden Circle →
-accept → the activity lands on both residents' weeks. If that runs clean,
-stop building.
+Today → Margaret → risk explained → Profile tab: upload or paste the care
+plan + intake, watch the profile fill itself in → Companion tab: the
+scored field, Helen at 92 → Schedule tab: both weeks side by side →
+accept. If that runs clean, stop building.
 
 The final beat is worth narrating: Margaret's week goes from 1 activity to
 2, while Helen already attends Garden Circle. The intervention is Margaret
@@ -23,14 +23,22 @@ it's a low-friction ask of staff.
 
 ## Layout
 
+| Route | What |
+|---|---|
+| `/` | Today — morning (before rounds) / evening (log outcomes) |
+| `/residents` | Roster, ranked by isolation risk |
+| `/residents/[id]` | Overview · Profile · Companion · Schedule |
+| `/connections` | Every pair — physics graph + compatibility matrix |
+| `/plan` | Generated week plan, editable |
+| `/activities` | Upcoming events — week calendar or list |
+
 | Path | Owner | What |
 |---|---|---|
-| `types.ts`, `seed-data.ts` (repo root) | Dev A | Locked shared contract. Imported as `@shared/types` / `@shared/seed`. |
-| `src/app/page.tsx` | Dev B | Dashboard — resident list, risk badges |
-| `src/app/residents/[id]/page.tsx` | Dev B | Risk card (static) + workspace |
-| `src/components/ResidentWorkspace.tsx` | Dev B | Stages extraction → match → prescription |
-| `src/lib/api.ts` | **seam** | Calls Dev A's routes, falls back to seed data |
-| `src/app/api/**` | Dev A | Not built yet |
+| `types.ts`, `seed-data.ts` (repo root) | Dev A | Locked shared contract. `@shared/types` / `@shared/seed`. |
+| `lib/ai/**`, `lib/matching/**`, `lib/candidates.ts` | Dev A | Extraction, scoring, event fit |
+| `lib/graph.ts`, `lib/planner.ts` | Dev B | All-pairs graph and week planner — both reuse Dev A's `scoreMatch`, nothing is scored twice |
+| `src/app/residents/[id]/layout.tsx` | Dev B | Summary rail + flow provider (state survives tab navigation) |
+| `src/lib/api.ts` | **seam** | Calls the real routes, falls back to seed data |
 
 ---
 
@@ -83,6 +91,23 @@ so please keep that true.
 Called automatically right after `/api/match` resolves — the pair and the
 activity land in one card, so no extra click is needed.
 
+### `GET /api/match/graph`
+```ts
+// out — every pair on the floor, deterministic, no LLM
+{ nodes: { residentId, affinity, degree }[],
+  edges: { a, b, score, components, blockedBy? }[],
+  threshold: number }
+```
+
+### `POST /api/plan-week`
+```ts
+// in
+{ priorities: { residentId, score, trend }[], existing?: Record<eventId, residentId[]> }
+// out
+{ pairings: { eventId, eventTitle, startTime, subjectId, companionId, score, reason }[],
+  unplaced: { residentId, reason }[] }
+```
+
 ### `GET /api/access`
 ```ts
 // out
@@ -101,6 +126,10 @@ Yours entirely — no UI depends on it.
 
 ## Notes
 
+- **Care plan upload** is client-side only: `.txt`/`.md` via `file.text()`,
+  `.pdf` via `pdfjs-dist` in the browser. The extracted text posts to the
+  existing extraction route, so it needed no backend change. Every failure
+  path falls back to the textarea.
 - **Voice input** is on the intake pane (Web Speech API, Chrome/Safari). It
   degrades silently: unsupported browser → button hidden, mic denied → inline
   error, and typing always works. Per the doc's cut rule this can be dropped
