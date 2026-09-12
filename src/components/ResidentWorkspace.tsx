@@ -15,6 +15,7 @@ import {
   recommendEvent,
   type MatchCandidate,
 } from "@/lib/api";
+import { recordAccepted } from "@/lib/accepted";
 import { mergeProfile } from "@/lib/ui";
 import CandidateList from "./CandidateList";
 import ExtractionPane from "./ExtractionPane";
@@ -104,6 +105,15 @@ export default function ResidentWorkspace({
   }
 
   function settle(status: "accepted" | "declined") {
+    // Remember an acceptance so the activity's own page shows the pair on
+    // its roster — otherwise navigating there contradicts what just
+    // happened on screen.
+    if (status === "accepted" && prescription) {
+      recordAccepted(prescription.event.id, [
+        prescription.match.residentAId,
+        prescription.match.residentBId,
+      ]);
+    }
     setPrescription((p) =>
       p ? { ...p, status, match: { ...p.match, status } } : p
     );

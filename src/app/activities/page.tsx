@@ -1,4 +1,7 @@
+import Link from "next/link";
 import { events } from "@shared/seed";
+import { findResident } from "@/lib/roster";
+import { attendeesFor } from "@/lib/schedule";
 import { titleCase } from "@/lib/ui";
 
 // Read-only view of the same catalog the event recommender scores
@@ -39,34 +42,42 @@ export default function ActivitiesPage() {
         </div>
 
         <ul>
-          {events.map((e) => (
-            <li
-              key={e.id}
-              className="flex flex-wrap items-baseline gap-x-6 gap-y-2 border-b border-line-soft py-5"
-            >
-              <div className="min-w-0 flex-1">
-                <h3 className="display text-[20px] leading-tight text-ink">
-                  {e.title}
-                </h3>
-                <p className="mt-1 text-[12px] text-muted">
-                  {e.startTime} · {e.location}
-                </p>
-              </div>
+          {events.map((e) => {
+            const going = attendeesFor(e.id).filter((a) => !a.lapsed);
+            return (
+              <li key={e.id} className="border-b border-line-soft">
+                <Link
+                  href={`/activities/${e.id}`}
+                  className="group flex flex-wrap items-center gap-x-6 gap-y-3 py-5"
+                >
+                  <div className="min-w-0 flex-1">
+                    <h3 className="display text-[20px] leading-tight text-ink transition group-hover:text-accent-deep">
+                      {e.title}
+                    </h3>
+                    <p className="mt-1 text-[12px] text-muted">
+                      {e.startTime} · {e.location}
+                    </p>
+                  </div>
 
-              <div className="flex flex-wrap gap-1.5">
-                {e.interests.map((i) => (
-                  <Tag key={i} accent>
-                    {i}
-                  </Tag>
-                ))}
-                <Tag>{titleCase(e.groupSize.replace(/_/g, " "))} group</Tag>
-                {e.accessibility.seatedAvailable && <Tag>Seated</Tag>}
-                {e.accessibility.physicalIntensity !== "low" && (
-                  <Tag>{titleCase(e.accessibility.physicalIntensity)} intensity</Tag>
-                )}
-              </div>
-            </li>
-          ))}
+                  <div className="hidden flex-wrap gap-1.5 lg:flex">
+                    {e.interests.map((i) => (
+                      <Tag key={i} accent>
+                        {i}
+                      </Tag>
+                    ))}
+                    <Tag>{titleCase(e.groupSize.replace(/_/g, " "))} group</Tag>
+                  </div>
+
+                  <div className="flex w-[136px] shrink-0 items-center justify-end gap-2.5">
+                    <AvatarStack residentIds={going.map((a) => a.residentId)} />
+                    <span className="font-mono text-[12.5px] tabular-nums text-muted">
+                      {going.length}
+                    </span>
+                  </div>
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       </div>
     </div>
@@ -89,6 +100,40 @@ function Tag({
       }`}
     >
       {children}
+    </span>
+  );
+}
+
+function AvatarStack({ residentIds }: { residentIds: string[] }) {
+  const shown = residentIds.slice(0, 4);
+  const extra = residentIds.length - shown.length;
+
+  return (
+    <span className="flex items-center">
+      {shown.map((id, i) => {
+        const r = findResident(id);
+        return (
+          <span
+            key={id}
+            aria-hidden
+            className={`grid h-7 w-7 place-items-center rounded-full bg-line-soft text-[9.5px] font-semibold text-ink-soft ring-2 ring-paper ${
+              i > 0 ? "-ml-2" : ""
+            }`}
+          >
+            {/* One letter only — the next avatar overlaps this one and
+                would clip a second character. */}
+            {r ? r.firstName[0] : "?"}
+          </span>
+        );
+      })}
+      {extra > 0 && (
+        <span
+          aria-hidden
+          className="-ml-2 grid h-7 w-7 place-items-center rounded-full bg-line text-[9.5px] font-medium text-muted ring-2 ring-paper"
+        >
+          +{extra}
+        </span>
+      )}
     </span>
   );
 }

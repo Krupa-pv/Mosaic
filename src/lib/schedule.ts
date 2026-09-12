@@ -15,6 +15,8 @@ import { events } from "@shared/seed";
 // ============================================================
 
 const baseSchedule: Record<string, string[]> = {
+  // The demo pair, built to §3: Margaret is down to one activity a week,
+  // Helen is on the floor's social circuit.
   margaret: ["jazz-hour"],
   helen: [
     "garden-circle",
@@ -23,6 +25,19 @@ const baseSchedule: Record<string, string[]> = {
     "trivia",
     "book-club",
   ],
+
+  // The rest of the floor. Attendance roughly tracks their risk score —
+  // the residents Mosaic is watching show up in fewer places — so the
+  // activity pages have real rosters instead of empty ones.
+  robert: ["painting"],
+  dorothy: ["shared-breakfast"],
+  arthur: ["shared-breakfast", "trivia"],
+  frances: ["shared-breakfast", "book-club", "cooking-demo"],
+  beatrice: ["shared-breakfast", "trivia", "painting", "cooking-demo"],
+  walter: ["morning-walk", "jazz-hour"],
+  yolanda: ["shared-breakfast", "book-club", "trivia", "painting"],
+  samuel: ["shared-breakfast", "morning-walk", "trivia"],
+  irene: ["shared-breakfast", "book-club", "morning-walk", "garden-circle"],
 };
 
 // What Margaret has stopped attending. §3: she was at 3 events/week and
@@ -33,6 +48,8 @@ const baseSchedule: Record<string, string[]> = {
 //   shared-breakfast <- risk factor, "meals in shared dining down 41%"
 const lapsedSchedule: Record<string, string[]> = {
   margaret: ["cooking-demo", "shared-breakfast"],
+  // Her risk factor reads "stopped attending weekly music group".
+  dorothy: ["jazz-hour"],
 };
 
 const DAY_ORDER = [
@@ -98,4 +115,23 @@ export function weeklyCount(residentId: string): number {
 
 export function lapsedCount(residentId: string): number {
   return (lapsedSchedule[residentId] ?? []).length;
+}
+
+export interface Attendee {
+  residentId: string;
+  /** They used to come and have stopped — shown, but not counted as going. */
+  lapsed: boolean;
+}
+
+/** The reverse index: who is on this activity's roster. */
+export function attendeesFor(eventId: string): Attendee[] {
+  const going = Object.entries(baseSchedule)
+    .filter(([, ids]) => ids.includes(eventId))
+    .map(([residentId]) => ({ residentId, lapsed: false }));
+
+  const stopped = Object.entries(lapsedSchedule)
+    .filter(([, ids]) => ids.includes(eventId))
+    .map(([residentId]) => ({ residentId, lapsed: true }));
+
+  return [...going, ...stopped];
 }
