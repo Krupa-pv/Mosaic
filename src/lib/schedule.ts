@@ -117,6 +117,11 @@ export function lapsedCount(residentId: string): number {
   return (lapsedSchedule[residentId] ?? []).length;
 }
 
+/** Event ids this resident used to attend and has stopped. */
+export function lapsedFor(residentId: string): string[] {
+  return lapsedSchedule[residentId] ?? [];
+}
+
 const DAY_NAMES = [
   "Sunday",
   "Monday",

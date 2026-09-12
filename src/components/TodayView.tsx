@@ -6,24 +6,23 @@ import {
   ArrowRight,
   CalendarDays,
   CircleAlert,
+  ClipboardList,
   Moon,
   Sun,
   TrendingUp,
   type LucideIcon,
 } from "lucide-react";
 import { allResidents, findResident } from "@/lib/roster";
+import { CURRENT_STAFF_ID, staffFor } from "@/lib/staff";
+import { completeTask, useTasks } from "@/lib/tasks";
+import { addObservation } from "@/lib/observations";
 import { attendeesFor, dayNameOf, eventsOn } from "@/lib/schedule";
-import {
-  OUTCOME_LABELS,
-  recordOutcome,
-  useAllAccepted,
-  useOutcomes,
-  type Outcome,
-} from "@/lib/accepted";
+import { useAllAccepted, useOutcomes } from "@/lib/accepted";
 import { events } from "@shared/seed";
 import Avatar from "./ui/Avatar";
 import AvatarStack from "./ui/AvatarStack";
 import PageContainer from "./ui/PageContainer";
+import OutcomeCapture from "./OutcomeCapture";
 import RiskBadge from "./ui/RiskBadge";
 import SectionHeader from "./ui/SectionHeader";
 
@@ -142,7 +141,10 @@ function Morning({ today }: { today: string }) {
                   <p className="truncate text-body font-medium text-ink">
                     {r.firstName} {r.lastName}
                   </p>
-                  <p className="text-caption text-muted">Room {r.roomNumber}</p>
+                  <p className="text-caption text-muted">
+                    Room {r.roomNumber}
+                    {staffFor(r.id) && ` · ${staffFor(r.id)!.firstName}`}
+                  </p>
                 </div>
               </div>
 
@@ -161,7 +163,7 @@ function Morning({ today }: { today: string }) {
               </p>
 
               <span className="mt-4 inline-flex items-center gap-1.5 text-caption font-medium text-accent">
-                Review &amp; pair
+                See what would help
                 <ArrowRight
                   aria-hidden
                   className="h-3.5 w-3.5 transition group-hover:translate-x-0.5"
@@ -183,6 +185,8 @@ function Morning({ today }: { today: string }) {
           </p>
         )}
       </Section>
+
+      <MyTasks />
 
       <Section
         icon={CalendarDays}
@@ -220,6 +224,60 @@ function Morning({ today }: { today: string }) {
         </ul>
       </Section>
     </>
+  );
+}
+
+function MyTasks() {
+  const open = useTasks({ staffId: CURRENT_STAFF_ID }).filter((t) => !t.doneAt);
+  if (open.length === 0) return null;
+
+  return (
+    <Section
+      icon={ClipboardList}
+      title="Yours to do"
+      hint={`${open.length} open`}
+    >
+      <ul className="space-y-2">
+        {open.map((t) => {
+          const r = findResident(t.residentId);
+          return (
+            <li
+              key={t.id}
+              className="flex flex-wrap items-center gap-3 rounded-xl border border-line bg-raised px-5 py-3.5"
+            >
+              {r && (
+                <Avatar
+                  residentId={r.id}
+                  firstName={r.firstName}
+                  lastName={r.lastName}
+                  size="xs"
+                />
+              )}
+              <div className="min-w-0 flex-1">
+                <p className="text-body text-ink">
+                  {t.title} — {r?.firstName}
+                </p>
+                <p className="text-micro text-muted">{t.because}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  completeTask(t.id);
+                  addObservation({
+                    residentId: t.residentId,
+                    sentiment: "note",
+                    text: `${t.title.toLowerCase()} — done.`,
+                  });
+                }}
+                className="rounded-lg bg-accent px-3.5 py-2 text-caption font-medium text-white transition hover:bg-accent-deep"
+              >
+                Done
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </Section>
   );
 }
 
@@ -290,46 +348,18 @@ function Evening({ today }: { today: string }) {
                 <RiskBadge level={r.riskLevel} />
               </div>
 
-              <div className="mt-4 flex flex-wrap gap-2">
-                {(Object.keys(OUTCOME_LABELS) as Outcome[]).map((o) => {
-                  const active = current === o;
-                  return (
-                    <button
-                      key={o}
-                      type="button"
-                      aria-pressed={active}
-                      onClick={() => recordOutcome(a.eventId, a.residentId, o)}
-                      className={`rounded-lg px-3.5 py-2 text-caption transition ${
-                        active
-                          ? o === "went_well"
-                            ? "bg-low text-white"
-                            : o === "follow_up"
-                              ? "bg-mid text-white"
-                              : "bg-muted text-white"
-                          : "bg-surface text-ink-soft ring-1 ring-inset ring-line hover:bg-line-soft"
-                      }`}
-                    >
-                      {OUTCOME_LABELS[o]}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {current === "went_well" && (
-                <p className="kw-fade mt-3 text-caption text-low">
-                  Logged. Mosaic will weight this pairing higher for both of them.
-                </p>
-              )}
-              {current === "follow_up" && (
-                <p className="kw-fade mt-3 text-caption text-mid">
-                  Flagged for tomorrow&apos;s rounds.
-                </p>
-              )}
-              {current === "did_not_happen" && (
-                <p className="kw-fade mt-3 text-caption text-muted">
-                  Noted — this won&apos;t count against the pairing.
-                </p>
-              )}
+              <OutcomeCapture
+                residentId={a.residentId}
+                eventId={a.eventId}
+                current={current}
+                companionName={
+                  findResident(
+                    due.find(
+                      (x) => x.eventId === a.eventId && x.residentId !== a.residentId
+                    )?.residentId ?? ""
+                  )?.firstName
+                }
+              />
             </li>
           );
         })}

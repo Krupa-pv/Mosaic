@@ -6,6 +6,7 @@ import { notesFor } from "@/lib/notes";
 import { riskHex, riskTone } from "@/lib/ui";
 import RiskTrajectory from "@/components/RiskTrajectory";
 import NoProfileYet from "@/components/resident/NoProfileYet";
+import InterventionList from "@/components/resident/InterventionList";
 
 /** Overview: why this resident is flagged. The rail carries the score,
  *  so this leads with the trajectory and the drivers behind it. */
@@ -61,6 +62,8 @@ export default async function ResidentOverviewPage({
         </div>
       </section>
 
+      <InterventionList resident={resident} />
+
       {hasNotes ? (
         <Link
           href={`/residents/${id}/profile`}
@@ -72,7 +75,8 @@ export default async function ResidentOverviewPage({
             </p>
             <p className="mt-1 text-caption leading-relaxed text-muted">
               Her care plan and intake note are on file. Mosaic can turn them
-              into interests, preferences and constraints.
+              into interests, preferences and constraints — which sharpens
+              every option above.
             </p>
           </div>
           <ArrowRight

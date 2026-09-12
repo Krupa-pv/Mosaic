@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Check } from "lucide-react";
 import type { Resident } from "@shared/types";
 import { historyFor } from "@/lib/roster";
+import { staffFor } from "@/lib/staff";
 import { riskHex, trendLabel } from "@/lib/ui";
 import { useFlowResults } from "./ResidentFlowProvider";
 import Sparkline from "../Sparkline";
@@ -17,6 +18,7 @@ import RiskBadge from "../ui/RiskBadge";
  */
 export default function SummaryRail({ resident }: { resident: Resident }) {
   const { extracted, match, prescription, merged } = useFlowResults();
+  const owner = staffFor(resident.id);
 
   const steps = [
     { label: "Profile built", done: extracted, href: "profile" },
@@ -51,6 +53,15 @@ export default function SummaryRail({ resident }: { resident: Resident }) {
           <p className="mt-1 text-caption text-muted">
             Room {resident.roomNumber} · Floor 2
           </p>
+          {owner && (
+            <p className="mt-1.5 text-micro text-muted">
+              Assigned to{" "}
+              <span className="font-medium text-accent">
+                {owner.firstName} {owner.lastName}
+              </span>{" "}
+              · {owner.role}
+            </p>
+          )}
         </div>
       </div>
 
