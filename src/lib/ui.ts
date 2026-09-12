@@ -4,24 +4,27 @@ export function riskTone(level: Resident["riskLevel"]) {
   switch (level) {
     case "high":
       return {
-        badge: "bg-rose-50 text-rose-700 ring-rose-200",
-        bar: "bg-rose-500",
-        dot: "bg-rose-500",
-        label: "High risk",
+        badge: "bg-high-soft text-high",
+        bar: "bg-high",
+        dot: "bg-high",
+        text: "text-high",
+        label: "Elevated",
       };
     case "moderate":
       return {
-        badge: "bg-amber-50 text-amber-700 ring-amber-200",
-        bar: "bg-amber-500",
-        dot: "bg-amber-500",
-        label: "Moderate risk",
+        badge: "bg-mid-soft text-mid",
+        bar: "bg-mid",
+        dot: "bg-mid",
+        text: "text-mid",
+        label: "Watch",
       };
     default:
       return {
-        badge: "bg-emerald-50 text-emerald-700 ring-emerald-200",
-        bar: "bg-emerald-500",
-        dot: "bg-emerald-500",
-        label: "Low risk",
+        badge: "bg-low-soft text-low",
+        bar: "bg-low",
+        dot: "bg-low",
+        text: "text-low",
+        label: "Stable",
       };
   }
 }

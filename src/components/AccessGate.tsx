@@ -27,18 +27,18 @@ export default function AccessGate() {
 
   if (state === "inactive") {
     return (
-      <div className="fixed inset-0 z-50 grid place-items-center bg-stone-900/60 p-4">
-        <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
-          <h2 className="text-lg font-semibold">Subscription inactive</h2>
-          <p className="mt-2 text-sm text-stone-600">
-            Kinwell — Facility OS is licensed per facility. Activate your
+      <div className="fixed inset-0 z-50 grid place-items-center bg-ink/55 p-4">
+        <div className="w-full max-w-md rounded-2xl bg-raised p-7 shadow-xl">
+          <h2 className="display text-[22px] text-ink">Subscription inactive</h2>
+          <p className="mt-2.5 text-[13.5px] leading-relaxed text-ink-soft">
+            Mosaic — Facility OS is licensed per facility. Activate your
             facility&apos;s subscription to restore dashboard access.
           </p>
           <a
             href={checkoutUrl ?? "https://whop.com"}
             target="_blank"
             rel="noreferrer"
-            className="mt-5 inline-flex w-full items-center justify-center rounded-lg bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-800"
+            className="mt-6 inline-flex w-full items-center justify-center rounded-xl bg-accent px-4 py-3 text-[13.5px] font-medium text-white transition hover:bg-accent-deep"
           >
             Subscribe with Whop
           </a>
@@ -47,20 +47,15 @@ export default function AccessGate() {
     );
   }
 
-  const tone =
-    state === "active"
-      ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
-      : "bg-stone-100 text-stone-500 ring-stone-200";
-
   return (
     <span
-      className={`hidden items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium ring-1 ring-inset sm:inline-flex ${tone}`}
+      className="inline-flex items-center gap-1.5 text-[11px] text-muted"
       title="Facility subscription status, via Whop"
     >
       <span
         aria-hidden
         className={`h-1.5 w-1.5 rounded-full ${
-          state === "active" ? "bg-emerald-500" : "bg-stone-400"
+          state === "active" ? "bg-low" : "bg-faint"
         }`}
       />
       {state === "active" ? "Subscription active" : "Whop"}

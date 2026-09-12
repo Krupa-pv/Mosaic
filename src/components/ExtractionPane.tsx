@@ -29,73 +29,71 @@ export default function ExtractionPane({
   );
 
   return (
-    <div className="flex flex-col rounded-xl border border-stone-200 bg-white">
-      <div className="flex items-center gap-2 border-b border-stone-100 px-4 py-3">
-        <h3 className="text-sm font-semibold">{title}</h3>
-        <span className="text-[11px] text-stone-400">{hint}</span>
+    <div className="flex flex-col overflow-hidden rounded-2xl border border-line bg-raised">
+      <div className="flex items-center gap-2.5 border-b border-line-soft px-5 py-3.5">
+        <h3 className="text-[13.5px] font-medium text-ink">{title}</h3>
+        <span className="text-[11px] text-faint">{hint}</span>
         {allowVoice && voice.supported && (
           <button
             type="button"
             onClick={voice.listening ? voice.stop : voice.start}
             aria-pressed={voice.listening}
-            className={`ml-auto inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium ring-1 ring-inset transition ${
+            className={`ml-auto inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10.5px] font-medium transition ${
               voice.listening
-                ? "bg-rose-50 text-rose-700 ring-rose-200"
-                : "bg-stone-50 text-stone-600 ring-stone-200 hover:bg-stone-100"
+                ? "bg-high-soft text-high"
+                : "bg-line-soft text-ink-soft hover:bg-line"
             }`}
           >
             <span
               aria-hidden
               className={`h-1.5 w-1.5 rounded-full ${
-                voice.listening ? "animate-pulse bg-rose-500" : "bg-stone-400"
+                voice.listening ? "animate-pulse bg-high" : "bg-faint"
               }`}
             />
-            {voice.listening ? "Listening — tap to stop" : "Dictate"}
+            {voice.listening ? "Listening" : "Dictate"}
           </button>
         )}
       </div>
 
-      <div className="p-4">
+      <div className="p-5">
         <textarea
           value={value}
           onChange={(e) => onChange(e.target.value)}
           rows={6}
           placeholder="Paste or dictate the note…"
-          className="w-full resize-y rounded-lg border border-stone-200 bg-stone-50 p-3 font-mono text-[12.5px] leading-relaxed text-stone-700 outline-none focus:border-teal-400 focus:bg-white"
+          className="w-full resize-y rounded-xl border border-line-soft bg-surface p-3.5 font-mono text-[12px] leading-[1.7] text-ink-soft outline-none transition focus:border-accent/40 focus:bg-raised"
         />
 
         {voice.error && (
-          <p className="mt-2 text-xs text-rose-600">{voice.error}</p>
+          <p className="mt-2 text-[11.5px] text-high">{voice.error}</p>
         )}
 
         <button
           type="button"
           onClick={onRun}
           disabled={loading || !value.trim()}
-          className="mt-3 inline-flex items-center gap-2 rounded-lg bg-stone-900 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-stone-700 disabled:cursor-not-allowed disabled:opacity-40"
+          className="mt-3.5 inline-flex items-center gap-2 rounded-lg bg-ink px-4 py-2 text-[12.5px] font-medium text-paper transition hover:bg-ink-soft disabled:cursor-not-allowed disabled:opacity-30"
         >
           {loading && (
             <span
               aria-hidden
-              className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white"
+              className="h-3 w-3 animate-spin rounded-full border-[1.5px] border-paper/30 border-t-paper"
             />
           )}
           {loading ? "Extracting…" : "Extract"}
         </button>
 
         {result && (
-          <div className="kw-rise mt-4">
+          <div className="kw-rise mt-5">
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-semibold uppercase tracking-wide text-stone-500">
-                Structured output
-              </span>
+              <span className="eyebrow">Structured output</span>
               {fallback && (
-                <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-700 ring-1 ring-inset ring-amber-200">
+                <span className="rounded-full bg-mid-soft px-2 py-0.5 text-[9.5px] font-medium text-mid">
                   cached
                 </span>
               )}
             </div>
-            <pre className="mt-2 max-h-64 overflow-auto rounded-lg bg-stone-900 p-3 font-mono text-[11.5px] leading-relaxed text-teal-50">
+            <pre className="mt-2.5 max-h-64 overflow-auto rounded-xl bg-accent-deep p-4 font-mono text-[11px] leading-[1.7] text-accent-soft">
               {JSON.stringify(stripId(result), null, 2)}
             </pre>
           </div>

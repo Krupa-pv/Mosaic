@@ -1,4 +1,4 @@
-# Kinwell — Facility OS
+# Mosaic — Facility OS
 
 Social-health intelligence for long-term care. Built against
 [kinwell_design_doc.md](kinwell_design_doc.md) — that doc is the source of truth,

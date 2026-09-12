@@ -1,108 +1,123 @@
 import Link from "next/link";
-import { residents } from "@shared/seed";
+import { allResidents } from "@/lib/roster";
 import { initials, riskTone, trendLabel } from "@/lib/ui";
 
 export default function DashboardPage() {
-  const sorted = [...residents].sort((a, b) => b.riskScore - a.riskScore);
+  const sorted = [...allResidents].sort((a, b) => b.riskScore - a.riskScore);
   const flagged = sorted.filter((r) => r.riskLevel === "high");
+  const rising = sorted.filter((r) => r.riskTrend > 0);
+  const top = flagged[0];
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
+    <div className="mx-auto max-w-5xl px-5 py-10 sm:px-10 sm:py-14">
+      {/* ---- Editorial header ---- */}
+      <header className="flex flex-wrap items-end justify-between gap-x-10 gap-y-6">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            Isolation risk
+          <p className="eyebrow">Floor 2 · Today</p>
+          <h1 className="display mt-2 text-[40px] leading-[1.05] text-ink sm:text-[46px]">
+            Who&apos;s drifting
+            <br />
+            out of reach
           </h1>
-          <p className="mt-1 text-sm text-stone-600">
-            Residents ranked by social-health risk, updated daily.
-          </p>
         </div>
-        <div className="flex gap-6 text-sm">
-          <Stat label="Residents monitored" value={String(residents.length)} />
-          <Stat
-            label="Flagged this week"
-            value={String(flagged.length)}
-            tone="text-rose-700"
-          />
-        </div>
-      </div>
+        <dl className="flex gap-8">
+          <Stat label="Residents" value={allResidents.length} />
+          <Stat label="Elevated" value={flagged.length} tone="text-high" />
+          <Stat label="Rising" value={rising.length} tone="text-mid" />
+        </dl>
+      </header>
 
-      {flagged.length > 0 && (
-        <div className="mt-6 flex items-start gap-3 rounded-xl border border-rose-200 bg-rose-50 p-4">
+      {/* ---- Lead signal ---- */}
+      {top && (
+        <Link
+          href={`/residents/${top.id}`}
+          className="group mt-10 flex items-start gap-4 rounded-2xl border border-line bg-raised p-5 transition hover:border-accent/35"
+        >
           <span
             aria-hidden
-            className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-rose-600 text-[11px] font-bold text-white"
+            className="mt-0.5 h-10 w-1 shrink-0 rounded-full bg-high"
+          />
+          <div className="min-w-0">
+            <p className="eyebrow text-high">Sharpest change this week</p>
+            <p className="mt-1.5 text-[15px] leading-relaxed text-ink-soft">
+              <span className="font-medium text-ink">
+                {top.firstName} {top.lastName}
+              </span>{" "}
+              has climbed {top.riskTrend} points in three weeks — attendance,
+              shared meals and staff notes are all moving the same direction.
+            </p>
+          </div>
+          <span
+            aria-hidden
+            className="ml-auto hidden shrink-0 self-center text-muted transition group-hover:translate-x-0.5 group-hover:text-accent sm:block"
           >
-            !
+            →
           </span>
-          <p className="text-sm text-rose-900">
-            <strong className="font-semibold">
-              {flagged[0].firstName} {flagged[0].lastName}
-            </strong>{" "}
-            has the sharpest rise in isolation risk on the floor — up{" "}
-            {flagged[0].riskTrend} points in three weeks.
-          </p>
-        </div>
+        </Link>
       )}
 
-      <ul className="mt-6 space-y-3">
-        {sorted.map((r) => {
-          const tone = riskTone(r.riskLevel);
-          return (
-            <li key={r.id}>
-              <Link
-                href={`/residents/${r.id}`}
-                className="group flex items-center gap-4 rounded-xl border border-stone-200 bg-white p-4 transition hover:border-teal-300 hover:shadow-sm"
-              >
-                <span
-                  aria-hidden
-                  className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-stone-100 text-sm font-semibold text-stone-600"
+      {/* ---- Roster ---- */}
+      <div className="mt-12">
+        <div className="flex items-baseline justify-between border-b border-line pb-2.5">
+          <h2 className="eyebrow">Roster</h2>
+          <span className="eyebrow font-normal tracking-normal normal-case text-faint">
+            Ranked by isolation risk
+          </span>
+        </div>
+
+        <ul>
+          {sorted.map((r) => {
+            const tone = riskTone(r.riskLevel);
+            return (
+              <li key={r.id} className="border-b border-line-soft">
+                <Link
+                  href={`/residents/${r.id}`}
+                  className="group flex items-center gap-4 py-3.5 transition"
                 >
-                  {initials(r.firstName, r.lastName)}
-                </span>
+                  <span
+                    aria-hidden
+                    className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-line-soft text-[11.5px] font-semibold text-ink-soft transition group-hover:bg-accent-soft group-hover:text-accent-deep"
+                  >
+                    {initials(r.firstName, r.lastName)}
+                  </span>
 
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate font-medium">
-                    {r.firstName} {r.lastName}
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[14.5px] text-ink transition group-hover:text-accent-deep">
+                      {r.firstName} {r.lastName}
+                    </span>
+                    <span className="block text-[11.5px] text-muted">
+                      Room {r.roomNumber}
+                    </span>
                   </span>
-                  <span className="block text-xs text-stone-500">
-                    Room {r.roomNumber} · {r.riskFactors.length} signal
-                    {r.riskFactors.length === 1 ? "" : "s"} tracked
-                  </span>
-                </span>
 
-                <span className="hidden w-40 sm:block">
-                  <span className="block h-1.5 w-full overflow-hidden rounded-full bg-stone-100">
-                    <span
-                      className={`block h-full rounded-full ${tone.bar}`}
-                      style={{ width: `${r.riskScore}%` }}
-                    />
-                  </span>
-                  <span className="mt-1.5 block text-[11px] text-stone-500">
+                  <span className="hidden w-28 text-right text-[11.5px] text-muted sm:block">
                     {trendLabel(r.riskTrend)}
                   </span>
-                </span>
 
-                <span className="flex shrink-0 items-center gap-3">
-                  <span className="text-right">
-                    <span className="block text-lg font-semibold tabular-nums leading-none">
-                      {r.riskScore}
-                    </span>
-                    <span className="block text-[11px] text-stone-500">
-                      risk
+                  <span className="hidden w-24 sm:block">
+                    <span className="block h-[3px] w-full overflow-hidden rounded-full bg-line">
+                      <span
+                        className={`block h-full rounded-full ${tone.bar}`}
+                        style={{ width: `${r.riskScore}%` }}
+                      />
                     </span>
                   </span>
+
+                  <span className="w-10 text-right font-mono text-[15px] tabular-nums text-ink">
+                    {r.riskScore}
+                  </span>
+
                   <span
-                    className={`rounded-full px-2.5 py-1 text-[11px] font-medium ring-1 ring-inset ${tone.badge}`}
+                    className={`w-[70px] shrink-0 rounded-full px-2 py-1 text-center text-[10.5px] font-medium ${tone.badge}`}
                   >
                     {tone.label}
                   </span>
-                </span>
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
     </div>
   );
 }
@@ -110,16 +125,18 @@ export default function DashboardPage() {
 function Stat({
   label,
   value,
-  tone = "text-stone-900",
+  tone = "text-ink",
 }: {
   label: string;
-  value: string;
+  value: number;
   tone?: string;
 }) {
   return (
     <div>
-      <div className={`text-2xl font-semibold tabular-nums ${tone}`}>{value}</div>
-      <div className="text-xs text-stone-500">{label}</div>
+      <dd className={`display text-[30px] leading-none tabular-nums ${tone}`}>
+        {value}
+      </dd>
+      <dt className="eyebrow mt-1.5">{label}</dt>
     </div>
   );
 }

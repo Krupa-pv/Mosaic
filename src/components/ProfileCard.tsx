@@ -29,83 +29,86 @@ export default function ProfileCard({
     ["Hearing", care.hearing && titleCase(care.hearing)],
     ["Vision", care.vision && titleCase(care.vision)],
     ["Cognition", care.cognition && titleCase(care.cognition)],
-    ["Best time of day", profile.preferredTimeOfDay && titleCase(profile.preferredTimeOfDay)],
+    [
+      "Best time",
+      profile.preferredTimeOfDay && titleCase(profile.preferredTimeOfDay),
+    ],
     [
       "Group size",
       profile.socialPreferences.preferredGroupSize &&
         titleCase(profile.socialPreferences.preferredGroupSize),
     ],
     [
-      "Conversational style",
+      "Style",
       profile.personality.conversationalStyle &&
         titleCase(profile.personality.conversationalStyle),
     ],
   ];
 
   return (
-    <div className="kw-rise mt-4 rounded-xl border border-teal-200 bg-teal-50/40 p-5">
-      <h3 className="text-xs font-semibold uppercase tracking-wide text-teal-800">
-        Merged profile
-        <span className="ml-2 font-normal normal-case tracking-normal text-teal-700/70">
+    <div className="kw-rise mt-4 overflow-hidden rounded-2xl border border-accent/25 bg-accent-soft/50">
+      <div className="flex items-baseline gap-2.5 border-b border-accent/15 px-6 py-3.5">
+        <h3 className="eyebrow text-accent">Merged profile</h3>
+        <span className="text-[11px] text-accent/70">
           care plan wins on conflict
         </span>
-      </h3>
-
-      <dl className="mt-4 grid gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-4">
-        {facts
-          .filter(([, v]) => Boolean(v))
-          .map(([k, v]) => (
-            <div key={k}>
-              <dt className="text-[11px] uppercase tracking-wide text-stone-500">
-                {k}
-              </dt>
-              <dd className="text-sm font-medium text-stone-800">{v}</dd>
-            </div>
-          ))}
-      </dl>
-
-      <div className="mt-5">
-        <span className="text-[11px] uppercase tracking-wide text-stone-500">
-          Interests
-        </span>
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-          {profile.interests.map((i) => (
-            <span
-              key={i}
-              className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-xs font-medium text-stone-700 ring-1 ring-inset ring-stone-200"
-            >
-              {i}
-              <button
-                type="button"
-                aria-label={`Remove ${i}`}
-                onClick={() =>
-                  onChange({
-                    ...profile,
-                    interests: profile.interests.filter((x) => x !== i),
-                  })
-                }
-                className="text-stone-400 transition hover:text-rose-600"
-              >
-                ×
-              </button>
-            </span>
-          ))}
-          <input
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addInterest())}
-            onBlur={addInterest}
-            placeholder="+ add"
-            className="w-24 rounded-full bg-white px-3 py-1 text-xs outline-none ring-1 ring-inset ring-dashed ring-stone-300 focus:ring-teal-400"
-          />
-        </div>
       </div>
 
-      {profile.personalityNote && (
-        <p className="mt-5 border-l-2 border-teal-300 pl-3 text-sm italic text-stone-600">
-          {profile.personalityNote}
-        </p>
-      )}
+      <div className="px-6 py-5">
+        <dl className="grid gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-4">
+          {facts
+            .filter(([, v]) => Boolean(v))
+            .map(([k, v]) => (
+              <div key={k}>
+                <dt className="eyebrow">{k}</dt>
+                <dd className="mt-1 text-[14px] text-ink">{v}</dd>
+              </div>
+            ))}
+        </dl>
+
+        <div className="mt-6">
+          <span className="eyebrow">Interests</span>
+          <div className="mt-2.5 flex flex-wrap items-center gap-2">
+            {profile.interests.map((i) => (
+              <span
+                key={i}
+                className="inline-flex items-center gap-1.5 rounded-full bg-raised px-3 py-1 text-[12px] text-ink-soft ring-1 ring-inset ring-accent/15"
+              >
+                {i}
+                <button
+                  type="button"
+                  aria-label={`Remove ${i}`}
+                  onClick={() =>
+                    onChange({
+                      ...profile,
+                      interests: profile.interests.filter((x) => x !== i),
+                    })
+                  }
+                  className="text-faint transition hover:text-high"
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+            <input
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) =>
+                e.key === "Enter" && (e.preventDefault(), addInterest())
+              }
+              onBlur={addInterest}
+              placeholder="+ add"
+              className="w-20 rounded-full border border-dashed border-accent/30 bg-transparent px-3 py-1 text-[12px] outline-none transition placeholder:text-faint focus:border-accent/60 focus:bg-raised"
+            />
+          </div>
+        </div>
+
+        {profile.personalityNote && (
+          <p className="display mt-6 border-l-2 border-accent/30 pl-4 text-[15px] leading-relaxed text-ink-soft italic">
+            {profile.personalityNote}
+          </p>
+        )}
+      </div>
     </div>
   );
 }

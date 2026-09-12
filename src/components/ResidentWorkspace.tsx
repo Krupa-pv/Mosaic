@@ -95,16 +95,16 @@ export default function ResidentWorkspace({
   return (
     <>
       {/* ---- Step 2: build the profile ---- */}
-      <section className="mt-6">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-500">
+      <section className="mt-12">
+        <h2 className="display text-[26px] leading-tight text-ink">
           Understand who she is
         </h2>
-        <p className="mt-1 text-sm text-stone-600">
+        <p className="mt-1.5 max-w-prose text-[13.5px] leading-relaxed text-muted">
           Unstructured notes in, structured profile out. Nothing here was typed
           into a form by staff.
         </p>
 
-        <div className="mt-4 grid gap-4 lg:grid-cols-2">
+        <div className="mt-5 grid gap-4 lg:grid-cols-2">
           <ExtractionPane
             title="Care plan"
             hint="clinical"
@@ -135,12 +135,12 @@ export default function ResidentWorkspace({
 
       {/* ---- Steps 3-4: match + prescribe ---- */}
       {extracted && (
-        <section className="mt-8 pb-16">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-500">
+        <section className="mt-14 pb-20">
+          <h2 className="display text-[26px] leading-tight text-ink">
             Prescribe a connection
           </h2>
-          <p className="mt-1 text-sm text-stone-600">
-            Kinwell scores every other resident against {residentName}&apos;s
+          <p className="mt-1.5 max-w-prose text-[13.5px] leading-relaxed text-muted">
+            Mosaic scores every other resident against {residentName}&apos;s
             profile, then finds an activity that works for both.
           </p>
 
@@ -149,7 +149,7 @@ export default function ResidentWorkspace({
               type="button"
               onClick={runMatch}
               disabled={matchLoading}
-              className="mt-4 inline-flex items-center gap-2 rounded-lg bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:opacity-60"
+              className="mt-5 inline-flex items-center gap-2 rounded-xl bg-accent px-5 py-3 text-[13.5px] font-medium text-white transition hover:bg-accent-deep disabled:opacity-60"
             >
               {matchLoading && (
                 <span

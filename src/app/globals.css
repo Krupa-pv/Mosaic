@@ -1,30 +1,73 @@
 @import "tailwindcss";
 
+/* ============================================================
+   Mosaic design tokens.
+   Warm paper ground, ink text, evergreen accent, and an earthy
+   risk ramp (brick → ochre → sage) instead of stoplight red/green.
+   ============================================================ */
+
+@theme {
+  --color-paper: #f2efe9;
+  --color-surface: #fbfaf7;
+  --color-raised: #ffffff;
+  --color-line: #e0d9cd;
+  --color-line-soft: #eae4da;
+
+  --color-ink: #1b1a17;
+  --color-ink-soft: #4a4740;
+  --color-muted: #7c766c;
+  --color-faint: #a39d92;
+
+  --color-accent: #1f5c47;
+  --color-accent-deep: #143d2f;
+  --color-accent-soft: #e4ede8;
+
+  --color-high: #a33f28;
+  --color-high-soft: #f6e7e1;
+  --color-mid: #a87524;
+  --color-mid-soft: #f7edda;
+  --color-low: #4a7355;
+  --color-low-soft: #e7eee8;
+
+  --font-display: var(--font-fraunces), Georgia, serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
 /* Light-only on purpose: the demo is screen-recorded, and an OS-level
    dark-mode flip mid-recording is a risk with zero upside. */
 :root {
   color-scheme: light;
-  --background: #f7f6f3;
-  --foreground: #1c1917;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Display face wants tighter tracking and a lower optical size. */
+.display {
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+  letter-spacing: -0.015em;
+  font-weight: 500;
+}
+
+/* Small all-caps section labels. */
+.eyebrow {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--color-muted);
 }
 
 @keyframes kw-rise {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
@@ -33,11 +76,16 @@ body {
 }
 
 .kw-rise {
-  animation: kw-rise 0.35s ease-out both;
+  animation: kw-rise 0.4s cubic-bezier(0.2, 0.7, 0.3, 1) both;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .kw-rise {
     animation: none;
   }
+}
+
+::selection {
+  background: var(--color-accent);
+  color: #fff;
 }
