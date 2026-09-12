@@ -4,10 +4,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import AccessGate from "./AccessGate";
 
+// Every item here is a real page. No placeholder nav — a judge who
+// clicks one during the demo has to land somewhere.
 const NAV = [
-  { href: "/", label: "Residents", live: true },
-  { href: "#", label: "Activities", live: false },
-  { href: "#", label: "Insights", live: false },
+  { href: "/", label: "Residents" },
+  { href: "/activities", label: "Activities" },
 ];
 
 export default function Sidebar() {
@@ -28,21 +29,18 @@ export default function Sidebar() {
         <nav className="flex flex-col gap-0.5 max-lg:hidden">
           {NAV.map((item) => {
             const active =
-              item.live &&
-              (item.href === "/"
+              item.href === "/"
                 ? pathname === "/" || pathname.startsWith("/residents")
-                : pathname === item.href);
+                : pathname.startsWith(item.href);
             return (
               <Link
                 key={item.label}
                 href={item.href}
-                aria-disabled={!item.live}
+                aria-current={active ? "page" : undefined}
                 className={`rounded-lg px-3 py-2 text-[13.5px] transition ${
                   active
                     ? "bg-accent-soft font-medium text-accent-deep"
-                    : item.live
-                      ? "text-ink-soft hover:bg-line-soft"
-                      : "cursor-default text-faint"
+                    : "text-ink-soft hover:bg-line-soft"
                 }`}
               >
                 {item.label}
