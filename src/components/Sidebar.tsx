@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { LogOut } from "lucide-react";
 import { HEX } from "@/lib/ui";
+import { signOut, useCurrentStaff } from "@/lib/session";
 import AccessGate from "./AccessGate";
 
 // Every item here is a real page. No placeholder nav — a judge who
@@ -19,6 +21,7 @@ const NAV = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const me = useCurrentStaff();
 
   return (
     <aside className="shrink-0 border-line bg-surface lg:sticky lg:top-0 lg:h-screen lg:w-64 lg:border-r max-lg:border-b">
@@ -58,21 +61,31 @@ export default function Sidebar() {
         {/* ---- Facility ---- */}
         <div className="mt-auto flex flex-col gap-3 max-lg:mt-0 max-lg:ml-auto max-lg:flex-row max-lg:items-center">
           <AccessGate />
-          <div className="flex items-center gap-2.5 border-t border-line pt-4 max-lg:border-0 max-lg:pt-0">
-            <span
-              aria-hidden
-              className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-line text-[11px] font-semibold text-ink-soft"
+          <div className="border-t border-line pt-4 max-lg:border-0 max-lg:pt-0">
+            <div className="flex items-center gap-2.5">
+              <span
+                aria-hidden
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent-soft text-micro font-semibold text-accent-deep"
+              >
+                {me ? `${me.firstName[0]}${me.lastName[0]}` : "MG"}
+              </span>
+              <span className="min-w-0 leading-tight max-lg:hidden">
+                <span className="block truncate text-caption font-medium text-ink">
+                  {me ? `${me.firstName} ${me.lastName}` : "Maple Grove"}
+                </span>
+                <span className="block text-micro text-muted">
+                  {me ? `${me.role} · Maple Grove` : "Care Center · Floor 2"}
+                </span>
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={signOut}
+              className="mt-3 inline-flex items-center gap-1.5 text-micro text-muted transition hover:text-accent max-lg:mt-0 max-lg:ml-3"
             >
-              MG
-            </span>
-            <span className="leading-tight max-lg:hidden">
-              <span className="block text-[12.5px] font-medium text-ink">
-                Maple Grove
-              </span>
-              <span className="block text-[11px] text-muted">
-                Care Center · Floor 2
-              </span>
-            </span>
+              <LogOut aria-hidden className="h-3 w-3" strokeWidth={2} />
+              Sign out
+            </button>
           </div>
         </div>
       </div>

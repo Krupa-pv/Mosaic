@@ -92,6 +92,17 @@ export default function WeekCalendar({ events }: { events: SocialEvent[] }) {
             </div>
           ))}
 
+          {/* ---- Day separators ---- */}
+          <div className="pointer-events-none absolute inset-y-0 right-0 left-14 flex gap-2">
+            {DAYS.map((day, i) => (
+              <div key={day} className="relative flex-1">
+                {i > 0 && (
+                  <span className="absolute inset-y-0 -left-1 w-px bg-line" />
+                )}
+              </div>
+            ))}
+          </div>
+
           {/* ---- Columns ---- */}
           <div className="absolute inset-y-0 right-0 left-14 flex gap-2">
             {DAYS.map((day) => {

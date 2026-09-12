@@ -47,6 +47,21 @@ export const HEX = {
   raised: "#ffffff",
 } as const;
 
+/**
+ * Enough to match on. Scoring runs happily against an empty profile and
+ * returns confident-looking numbers built from defaults — which is worse
+ * than refusing, because nothing on screen says the result is hollow.
+ */
+export function isProfileUsable(p: ResidentProfile | null | undefined): boolean {
+  if (!p) return false;
+  const hasInterests = p.interests.length > 0;
+  const hasCare = Object.values(p.careNeeds).some((v) => v !== undefined);
+  const hasSocial =
+    p.socialPreferences.preferredGroupSize !== undefined ||
+    p.personality.conversationalStyle !== undefined;
+  return hasInterests && (hasCare || hasSocial);
+}
+
 export function trendLabel(trend: number) {
   if (trend > 0) return `▲ ${trend} in 3 weeks`;
   if (trend < 0) return `▼ ${Math.abs(trend)} in 3 weeks`;

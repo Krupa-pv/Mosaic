@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { useFlowActions, useFlowResults } from "./ResidentFlowProvider";
+import { isProfileUsable } from "@/lib/ui";
 import MatchBoard from "./MatchBoard";
 import RecommendationCard from "../RecommendationCard";
 import EmptyStep from "./EmptyStep";
@@ -15,17 +16,22 @@ export default function PairStep() {
   // Arriving here straight from the profile step, there's nothing to look
   // at until scoring runs — so run it rather than showing an empty page
   // with a button on it.
-  useEffect(() => {
-    if (r.extracted && !r.match && !r.matchLoading) a.runMatch();
-  }, [r.extracted, r.match, r.matchLoading, a]);
+  const usable = isProfileUsable(r.merged);
 
-  if (!r.extracted) {
+  useEffect(() => {
+    if (usable && !r.match && !r.matchLoading) a.runMatch();
+  }, [usable, r.match, r.matchLoading, a]);
+
+  // Matching against an empty profile still returns numbers — built from
+  // defaults, and indistinguishable on screen from a real result. Refuse
+  // instead, and say what's missing.
+  if (!usable) {
     return (
       <EmptyStep
-        title="Build the profile first"
-        body={`Mosaic scores every other resident against ${r.residentName}'s interests, preferences and care needs — so it needs the profile before it can rank anyone.`}
+        title={`Build ${r.residentName}'s profile first`}
+        body={`Matching scores shared interests, group size, schedule and care needs against every other resident. Without a profile there is nothing to score — Mosaic would return a ranking built from defaults, which looks convincing and means nothing.`}
         href={`/residents/${r.residentId}/profile`}
-        cta="Go to profile"
+        cta="Build the profile"
       />
     );
   }

@@ -86,7 +86,20 @@ export function planWeek({
 
   for (const p of queue) {
     const subject = allProfiles[p.residentId];
-    if (!subject) continue;
+    if (!subject) {
+      unplaced.push({
+        residentId: p.residentId,
+        reason: "No profile on file — nothing to match against yet",
+      });
+      continue;
+    }
+    if (subject.interests.length === 0) {
+      unplaced.push({
+        residentId: p.residentId,
+        reason: "Profile has no interests yet — read a care plan first",
+      });
+      continue;
+    }
 
     const candidates = rankCandidates(p.residentId, subject, { highRiskIds })
       .filter((c) => !c.filtered)

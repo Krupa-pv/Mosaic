@@ -187,20 +187,32 @@ export function interventionsFor(
   }
 
   /* ---- pairing ---- */
+  // Needs something to score against. Offered either way, because the
+  // path to it is "build the profile", but it can't lead the list.
+  const canScore = interests.length > 0;
   push(
     {
       kind: "pair",
-      title: "Pair with a companion",
+      title: canScore
+        ? "Pair with a companion"
+        : "Build a profile, then pair",
       because: has(f, "event attendance", "declined", "group activities")
         ? factor(f, /attendance|declined|group/i, "Attendance is falling")
         : "Fewer shared activities than before",
-      detail:
-        "Mosaic scores every other resident and suggests an activity that suits them both.",
+      detail: canScore
+        ? "Mosaic scores every other resident and suggests an activity that suits them both."
+        : "Matching needs interests and preferences to score against. Read a care plan or intake note first — it takes a minute.",
       effort: "10 min",
-      href: `/residents/${resident.id}/pair`,
+      href: canScore
+        ? `/residents/${resident.id}/pair`
+        : `/residents/${resident.id}/profile`,
     },
     72,
     [
+      [
+        canScore ? 0 : -30,
+        "There is no profile to score against yet, so this can't be the first thing you do.",
+      ],
       [introversion < 0.5 ? 8 : 0, "They're outgoing, so a new face is likely to be welcome."],
       [introversion > 0.7 ? -8 : 0, "They're quite reserved, so a new person may be a bigger ask than it looks."],
       [missed >= 2 ? -12 : 0, `${missed} sessions didn't happen — adding another booking is unlikely to be what changes that.`],

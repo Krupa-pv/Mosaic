@@ -38,6 +38,9 @@ export function signIn(staffId: string) {
 export function signOut() {
   try {
     localStorage.removeItem(KEY);
+    // Clearing this replays the opening sequence on the next sign-in,
+    // which is also the only way to see it again without a new tab.
+    sessionStorage.removeItem("mosaic.booted");
   } catch {
     /* no-op */
   }

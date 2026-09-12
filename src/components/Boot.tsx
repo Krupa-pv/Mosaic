@@ -25,7 +25,12 @@ export default function Boot({ children }: { children: React.ReactNode }) {
 
   const signedIn = staff.find((s) => s.id === sessionId);
 
+  // Keyed on the session, not on mount, so signing back in replays the
+  // sequence — otherwise there is no way to see it again short of a new
+  // tab, and Boot never unmounts.
   useEffect(() => {
+    if (!sessionId) return;
+
     let booted = true;
     try {
       booted = sessionStorage.getItem("mosaic.booted") === "1";
@@ -44,7 +49,7 @@ export default function Boot({ children }: { children: React.ReactNode }) {
       clearTimeout(b);
       clearTimeout(c);
     };
-  }, []);
+  }, [sessionId]);
 
   // Still resolving storage: hold rather than flashing an account
   // picker at someone who is already signed in.
