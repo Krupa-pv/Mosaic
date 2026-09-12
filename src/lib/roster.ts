@@ -99,6 +99,21 @@ const floorResidents: Resident[] = [
     riskFactors: ["Consistent participation across the week"],
   },
   {
+    id: "eleanor",
+    firstName: "Eleanor",
+    lastName: "Whitfield",
+    roomNumber: "118",
+    // Admitted two days ago. No baseline yet, so the score is a
+    // placeholder until there's something to measure.
+    riskScore: 50,
+    riskTrend: 0,
+    riskLevel: "moderate",
+    riskFactors: [
+      "Admitted 2 days ago — no baseline yet",
+      "No care plan or intake note on file",
+    ],
+  },
+  {
     id: "irene",
     firstName: "Irene",
     lastName: "Kaminski",
@@ -115,6 +130,15 @@ export const allResidents: Resident[] = [...seedResidents, ...floorResidents];
 
 export function findResident(id: string): Resident | undefined {
   return allResidents.find((r) => r.id === id);
+}
+
+/** Recently admitted — shown on the roster until a profile exists. */
+const newAdmissions: Record<string, string> = {
+  eleanor: "Admitted 2 days ago",
+};
+
+export function admissionNote(residentId: string): string | undefined {
+  return newAdmissions[residentId];
 }
 
 // ============================================================
@@ -140,6 +164,8 @@ const riskHistory: Record<string, number[]> = {
   yolanda: [43, 42, 41, 39, 36, 34],
   samuel: [30, 29, 28, 28, 29, 29],
   irene: [28, 27, 26, 25, 23, 21],
+  // No history yet — she arrived two days ago.
+  eleanor: [],
 };
 
 export function historyFor(residentId: string): number[] {
@@ -151,10 +177,15 @@ export function historyFor(residentId: string): number[] {
   return r ? Array(WEEKS).fill(r.riskScore) : [];
 }
 
-/** Floor average per week — derived from every resident, not invented. */
+/** Floor average per week — derived from every resident, not invented.
+ *  Residents with no history yet are excluded rather than counted as
+ *  zero, which would drag the average down for everyone else. */
 export function floorAverage(): number[] {
-  const series = allResidents.map((r) => historyFor(r.id));
+  const series = allResidents
+    .map((r) => historyFor(r.id))
+    .filter((h) => h.length === WEEKS);
+  if (series.length === 0) return Array(WEEKS).fill(0);
   return Array.from({ length: WEEKS }, (_, i) =>
-    Math.round(series.reduce((sum, s) => sum + (s[i] ?? 0), 0) / series.length)
+    Math.round(series.reduce((sum, s) => sum + s[i], 0) / series.length)
   );
 }

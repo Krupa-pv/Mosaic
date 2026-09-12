@@ -95,9 +95,25 @@ const rosterProfiles: ResidentProfile[] = [
   },
 ];
 
+// Residents who have NOT been profiled yet. They stay out of the lookup
+// so the app takes its real "no profile" path: the roster flags them, the
+// Companion tab refuses to match, and the planner reports them unplaced
+// until someone reads a care plan in.
+//
+// Margaret is deliberately among them — building her profile live from
+// her care plan is the demo, and it can't be a demo if it's already done.
+const AWAITING_PROFILE = new Set(["margaret", "eleanor"]);
+
 export const allProfiles: Record<string, ResidentProfile> = Object.fromEntries(
-  [margaretProfile, helenProfile, robertProfile, ...rosterProfiles].map((p) => [p.residentId, p]),
+  [margaretProfile, helenProfile, robertProfile, ...rosterProfiles]
+    .filter((p) => !AWAITING_PROFILE.has(p.residentId))
+    .map((p) => [p.residentId, p]),
 );
+
+/** True when nobody has built this resident's profile yet. */
+export function awaitingProfile(residentId: string): boolean {
+  return !allProfiles[residentId];
+}
 
 export function profileFor(residentId: string): ResidentProfile | undefined {
   return allProfiles[residentId];

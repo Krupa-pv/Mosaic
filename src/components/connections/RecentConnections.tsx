@@ -13,6 +13,7 @@ import {
 } from "d3-force";
 import { allResidents, findResident } from "@/lib/roster";
 import { buildConnections } from "@/lib/connections";
+import { useAllAccepted } from "@/lib/accepted";
 import { photoFor } from "@/lib/photos";
 import { HEX, initials } from "@/lib/ui";
 
@@ -52,7 +53,10 @@ export default function RecentConnections({
   const [, setTick] = useState(0);
   const svgRef = useRef<SVGSVGElement>(null);
 
-  const graph = useMemo(() => buildConnections(), []);
+  // Re-derives whenever something is scheduled, so a newly placed
+  // resident stops being an outlier the moment you act.
+  const accepted = useAllAccepted();
+  const graph = useMemo(() => buildConnections(accepted), [accepted]);
 
   const { nodes, links, sim } = useMemo(() => {
     const nodes: Node[] = allResidents.map((r, i, arr) => {

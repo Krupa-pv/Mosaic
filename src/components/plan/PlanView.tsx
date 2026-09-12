@@ -106,7 +106,7 @@ export default function PlanView() {
   }
 
   const kept = (plan?.pairings ?? []).filter((p) => !dropped.has(key(p)));
-  const { isolated } = useMemo(() => buildConnections(), []);
+  const { isolated } = useMemo(() => buildConnections(accepted), [accepted]);
   const gaps = useMemo(() => findInterestGaps(), []);
 
   const byDay = DAYS.map((day) => ({

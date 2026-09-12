@@ -40,15 +40,26 @@ function weeklyOccurrences(startTime: string): number {
   return startTime.split(" ")[0] === "Daily" ? WINDOW_DAYS : 1;
 }
 
-export function buildConnections(): ConnectionGraph {
+export function buildConnections(
+  /** Prescriptions accepted this session, so the map moves as you plan. */
+  accepted: { eventId: string; residentId: string }[] = []
+): ConnectionGraph {
   const pairs = new Map<string, Connection>();
   const contact: Record<string, number> = {};
   for (const r of allResidents) contact[r.id] = 0;
 
   for (const event of events) {
-    const going = attendeesFor(event.id)
-      .filter((a) => !a.lapsed)
-      .map((a) => a.residentId);
+    const going = Array.from(
+      new Set([
+        ...attendeesFor(event.id)
+          .filter((a) => !a.lapsed)
+          .map((a) => a.residentId),
+        // Someone you just scheduled is someone they will now see.
+        ...accepted
+          .filter((a) => a.eventId === event.id)
+          .map((a) => a.residentId),
+      ])
+    );
     const runs = weeklyOccurrences(event.startTime);
 
     for (const id of going) contact[id] = (contact[id] ?? 0) + runs;
