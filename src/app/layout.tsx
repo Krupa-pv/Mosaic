@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Fraunces, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import Sidebar from "@/components/Sidebar";
+import Boot from "@/components/Boot";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -31,9 +32,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${inter.variable} ${fraunces.variable} ${geistMono.variable} h-full`}
     >
-      <body className="min-h-full lg:flex">
-        <Sidebar />
-        <main className="min-w-0 flex-1">{children}</main>
+      <body className="min-h-full">
+        <Boot>
+          <div className="min-h-screen lg:flex">
+            <Sidebar />
+            <main className="min-w-0 flex-1">{children}</main>
+          </div>
+        </Boot>
       </body>
     </html>
   );

@@ -24,18 +24,18 @@ export default function SectionHeader({
 }) {
   return (
     <div
-      className={`flex items-center gap-2.5 rounded-xl px-4 py-2.5 ${
+      className={`flex items-center gap-2.5 rounded-xl px-5 py-3 ${
         tone === "alert" ? "bg-high text-white" : "bg-accent-deep text-white"
       } ${className}`}
     >
       {Icon && (
-        <Icon aria-hidden className="h-4 w-4 shrink-0" strokeWidth={2} />
+        <Icon aria-hidden className="h-[18px] w-[18px] shrink-0" strokeWidth={2} />
       )}
-      <h2 className="text-caption font-semibold tracking-wide uppercase">
+      <h2 className="text-body font-semibold tracking-wide uppercase">
         {title}
       </h2>
       {hint && (
-        <span className="ml-auto text-micro text-white/70">{hint}</span>
+        <span className="ml-auto text-caption text-white/75">{hint}</span>
       )}
     </div>
   );

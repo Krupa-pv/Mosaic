@@ -17,19 +17,19 @@ export interface Staff {
 }
 
 export const staff: Staff[] = [
-  { id: "rosa", firstName: "Rosa", lastName: "Delgado", role: "CNA", shift: "day" },
+  { id: "menaka", firstName: "Menaka", lastName: "Raman", role: "CNA", shift: "day" },
   { id: "marcus", firstName: "Marcus", lastName: "Bell", role: "CNA", shift: "day" },
   { id: "priya", firstName: "Priya", lastName: "Nair", role: "LPN", shift: "evening" },
 ];
 
 /** The caregiver using the app. */
-export const CURRENT_STAFF_ID = "rosa";
+export const CURRENT_STAFF_ID = "menaka";
 
 const assignment: Record<string, string> = {
-  margaret: "rosa",
-  helen: "rosa",
-  dorothy: "rosa",
-  frances: "rosa",
+  margaret: "menaka",
+  helen: "menaka",
+  dorothy: "menaka",
+  frances: "menaka",
   robert: "marcus",
   arthur: "marcus",
   beatrice: "marcus",

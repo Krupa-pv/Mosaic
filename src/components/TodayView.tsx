@@ -13,16 +13,17 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { allResidents, findResident } from "@/lib/roster";
-import { CURRENT_STAFF_ID, currentStaff, residentsOf, staffFor } from "@/lib/staff";
+import { residentsOf, staffFor } from "@/lib/staff";
+import { useCurrentStaff } from "@/lib/session";
 import { completeTask, useTasks } from "@/lib/tasks";
 import { addObservation } from "@/lib/observations";
 import { attendeesFor, dayNameOf, eventsOn } from "@/lib/schedule";
 import { useAllAccepted } from "@/lib/accepted";
 import { events } from "@shared/seed";
 import Avatar from "./ui/Avatar";
-import AvatarStack from "./ui/AvatarStack";
 import PageContainer from "./ui/PageContainer";
 import OutcomeCapture from "./OutcomeCapture";
+import DayCalendar from "./DayCalendar";
 import RiskBadge from "./ui/RiskBadge";
 import SectionHeader from "./ui/SectionHeader";
 
@@ -33,7 +34,9 @@ type Mode = "morning" | "evening";
  * rounds"; evening is "what happened, and what needs following up".
  * Mode auto-selects on the clock and can be switched by hand.
  */
-export default function TodayView({ staffName }: { staffName: string }) {
+export default function TodayView() {
+  const me = useCurrentStaff();
+  const staffName = me?.firstName ?? "";
   const now = useMemo(() => new Date(), []);
   const [mode, setMode] = useState<Mode>(now.getHours() < 15 ? "morning" : "evening");
 
@@ -90,7 +93,7 @@ export default function TodayView({ staffName }: { staffName: string }) {
       </header>
 
       {mode === "morning" ? (
-        <Morning today={today} />
+        <Morning today={today} now={now} />
       ) : (
         <Evening today={today} />
       )}
@@ -100,11 +103,14 @@ export default function TodayView({ staffName }: { staffName: string }) {
 
 /* ---------------- morning ---------------- */
 
-function Morning({ today }: { today: string }) {
+function Morning({ today, now }: { today: string; now: Date }) {
+  const me = useCurrentStaff();
+  const myIds = residentsOf(me?.id ?? "");
+  const mySet = new Set(myIds);
   // Rising fastest first — someone climbing steeply matters more than
   // someone merely high and stable.
   const needsAttention = [...allResidents]
-    .filter((r) => r.riskLevel !== "low" && r.riskTrend > 0)
+    .filter((r) => mySet.has(r.id) && r.riskLevel !== "low" && r.riskTrend > 0)
     .sort((a, b) => b.riskTrend * 2 + b.riskScore - (a.riskTrend * 2 + a.riskScore))
     .slice(0, 3);
 
@@ -113,15 +119,15 @@ function Morning({ today }: { today: string }) {
     todays.flatMap((e) => attendeesFor(e.id).filter((a) => !a.lapsed).map((a) => a.residentId))
   );
   const unscheduled = allResidents.filter(
-    (r) => r.riskLevel !== "low" && !onSomethingToday.has(r.id)
+    (r) => mySet.has(r.id) && r.riskLevel !== "low" && !onSomethingToday.has(r.id)
   );
 
   return (
     <>
       <Section
         icon={CircleAlert}
-        title="Needs attention"
-        hint={`${needsAttention.length} residents`}
+        title="Needs your attention"
+        hint={`${needsAttention.length} of your ${myIds.length}`}
       >
         <div className="grid gap-3 lg:grid-cols-3">
           {needsAttention.map((r) => (
@@ -190,53 +196,22 @@ function Morning({ today }: { today: string }) {
 
       <Section
         icon={CalendarDays}
-        title={`Today · ${today}`}
-        hint={`${todays.length} activities`}
+        title={`Your shift · ${today}`}
+        hint={`8 AM – 5 PM · ${todays.length} activities on the floor`}
       >
-        <ul className="overflow-hidden rounded-2xl border border-line bg-raised">
-          {todays.map((e, i) => {
-            const going = attendeesFor(e.id).filter((a) => !a.lapsed);
-            return (
-              <li key={e.id} className={i > 0 ? "border-t border-line-soft" : ""}>
-                <Link
-                  href={`/activities/${e.id}`}
-                  className="group flex flex-wrap items-center gap-4 px-5 py-4 transition hover:bg-surface"
-                >
-                  <span className="w-20 shrink-0 font-mono text-caption tabular-nums text-muted">
-                    {e.startTime.split(" ").slice(1).join(" ")}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-body text-ink transition group-hover:text-accent-deep">
-                      {e.title}
-                    </span>
-                    <span className="block text-caption text-muted">
-                      {e.location}
-                    </span>
-                  </span>
-                  <AvatarStack residentIds={going.map((a) => a.residentId)} ring="raised" />
-                  <span className="w-8 text-right font-mono text-caption tabular-nums text-muted">
-                    {going.length}
-                  </span>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+        <DayCalendar events={todays} myResidentIds={myIds} now={now} />
       </Section>
     </>
   );
 }
 
 function MyTasks() {
-  const open = useTasks({ staffId: CURRENT_STAFF_ID }).filter((t) => !t.doneAt);
+  const me = useCurrentStaff();
+  const open = useTasks({ staffId: me?.id }).filter((t) => !t.doneAt);
   if (open.length === 0) return null;
 
   return (
-    <Section
-      icon={ClipboardList}
-      title="Yours to do"
-      hint={`${open.length} open`}
-    >
+    <Section icon={ClipboardList} title="Yours to do" hint={`${open.length} open`}>
       <ul className="space-y-2">
         {open.map((t) => {
           const r = findResident(t.residentId);
@@ -285,13 +260,13 @@ function MyTasks() {
 
 function Evening({ today }: { today: string }) {
   const accepted = useAllAccepted();
-  const me = currentStaff();
+  const me = useCurrentStaff();
 
   // Everyone assigned to this caregiver gets a feedback row — not just
   // residents who happened to have a prescription today. End of shift is
   // when you have something to say about all of them, and the residents
   // who did nothing are exactly the ones worth hearing about.
-  const mine = residentsOf(me.id)
+  const mine = residentsOf(me?.id ?? "")
     .map((id) => findResident(id))
     .filter((r): r is NonNullable<typeof r> => Boolean(r))
     .sort((a, b) => b.riskScore - a.riskScore);

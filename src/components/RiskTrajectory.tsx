@@ -23,10 +23,11 @@ export default function RiskTrajectory({
   const W = 620;
   const H = 170;
   // Wide enough that the leftmost week tick isn't clipped by the viewBox.
-  const padL = 26;
+  // Room for the y-axis labels and its title.
+  const padL = 54;
   const padR = 36;
-  const padT = 18;
-  const padB = 26;
+  const padT = 26;
+  const padB = 44;
 
   const all = [...values, ...average];
   const min = Math.max(0, Math.min(...all) - 10);
@@ -49,7 +50,10 @@ export default function RiskTrajectory({
   return (
     <figure className="m-0">
       {/* ---- Legend (two series) ---- */}
-      <figcaption className="flex flex-wrap items-center gap-x-5 gap-y-1">
+      <figcaption className="flex flex-wrap items-baseline gap-x-5 gap-y-1">
+        <span className="mr-auto text-body font-medium text-ink">
+          Isolation risk over 6 weeks
+        </span>
         <span className="flex items-center gap-1.5 text-[11px] text-ink-soft">
           <span
             aria-hidden
@@ -74,18 +78,65 @@ export default function RiskTrajectory({
         aria-label={`${name}'s isolation risk over ${values.length} weeks, rising from ${values[0]} to ${values[last]}, against a floor average of ${average[last]}.`}
         onMouseLeave={() => setHover(null)}
       >
-        {/* ---- Recessive gridlines ---- */}
+        {/* ---- Gridlines with a labelled y-axis ---- */}
         {[min, (min + max) / 2, max].map((v) => (
-          <line
-            key={v}
-            x1={padL}
-            x2={W - padR}
-            y1={y(v)}
-            y2={y(v)}
-            stroke="var(--color-line-soft)"
-            strokeWidth="1"
-          />
+          <g key={v}>
+            <line
+              x1={padL}
+              x2={W - padR}
+              y1={y(v)}
+              y2={y(v)}
+              stroke="var(--color-line-soft)"
+              strokeWidth="1"
+            />
+            <text
+              x={padL - 8}
+              y={y(v) + 4}
+              textAnchor="end"
+              fill="var(--color-muted)"
+              className="font-mono text-[11px]"
+            >
+              {Math.round(v)}
+            </text>
+          </g>
         ))}
+
+        {/* ---- Axis lines ---- */}
+        <line
+          x1={padL}
+          x2={padL}
+          y1={padT - 6}
+          y2={H - padB}
+          stroke="var(--color-line)"
+          strokeWidth="1"
+        />
+        <line
+          x1={padL}
+          x2={W - padR}
+          y1={H - padB}
+          y2={H - padB}
+          stroke="var(--color-line)"
+          strokeWidth="1"
+        />
+
+        {/* ---- Axis titles ---- */}
+        <text
+          transform={`translate(14 ${(H - padB + padT) / 2}) rotate(-90)`}
+          textAnchor="middle"
+          fill="var(--color-muted)"
+          className="text-[11px]"
+        >
+          Isolation risk (0–100)
+        </text>
+        <text
+          x={(padL + W - padR) / 2}
+          y={H - 6}
+          textAnchor="middle"
+          fill="var(--color-muted)"
+          className="text-[11px]"
+        >
+          Week
+        </text>
 
         {/* ---- Context series ---- */}
         <polyline
@@ -131,10 +182,10 @@ export default function RiskTrajectory({
           <text
             key={i}
             x={x(i)}
-            y={H - 8}
+            y={H - padB + 16}
             textAnchor="middle"
             fill="var(--color-faint)"
-            className="text-[9.5px]"
+            className="text-[11px]"
           >
             {weekLabel(i)}
           </text>
