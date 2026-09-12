@@ -26,10 +26,12 @@ if (!SECRET) {
   process.exit(1);
 }
 
-const FACILITY = "prod_UBbrTBEoC3xQW";
+const FACILITY = "prod_l7zWolodBoxKz";
+const FACILITY_LEGACY = "prod_UBbrTBEoC3xQW";
 const FAMILY = "prod_xuhpewe0Fs48C";
-const PLAN_STARTER = "plan_NmK4hEHqqlTno";
-const PLAN_GROWTH = "plan_0SATrHJQFp1SF";
+const PLAN_STARTER_ONETIME = "plan_NmK4hEHqqlTno"; // legacy, free, one_time
+const PLAN_STARTER = "plan_i9jMQwnkfaypN"; // $29.99/mo
+const PLAN_GROWTH = "plan_fZrkKlznGRj8N"; // $79.99/mo
 const PLAN_FAMILY = "plan_hswCD4Xon07jE";
 
 function sign(id: string, timestamp: number, body: string): string {
@@ -117,15 +119,33 @@ async function main() {
   check("family tier", f.json?.subscriber?.tier, "family");
   check("no tenant created", f.json?.tenant, undefined);
 
-  console.log("\n--- free Starter settles to completed, still granted ---");
+  console.log("\n--- legacy free Starter is one_time: completed still grants ---");
   const starterMem = `mem_start_${randomUUID().slice(0, 6)}`;
   const s = await send(
     membershipEvent("membership.activated", {
-      membership: starterMem, product: FACILITY, plan: PLAN_STARTER, status: "completed",
+      membership: starterMem, product: FACILITY_LEGACY, plan: PLAN_STARTER_ONETIME, status: "completed",
     }),
   );
   check("tenant active", s.json?.tenant?.status, "active");
   check("starter tier", s.json?.tenant?.tier, "starter");
+
+  console.log("\n--- renewal plan reaching completed means ENDED, revoke ---");
+  const endedMem = `mem_ended_${randomUUID().slice(0, 6)}`;
+  const e = await send(
+    membershipEvent("membership.activated", {
+      membership: endedMem, product: FACILITY, plan: PLAN_GROWTH, status: "completed",
+    }),
+  );
+  check("not granted", e.json?.tenant, null);
+
+  console.log("\n--- current $29.99 plan maps to starter ---");
+  const newStarter = `mem_new_${randomUUID().slice(0, 6)}`;
+  const ns = await send(
+    membershipEvent("membership.activated", {
+      membership: newStarter, product: FACILITY, plan: PLAN_STARTER, status: "active",
+    }),
+  );
+  check("starter tier", ns.json?.tenant?.tier, "starter");
 
   console.log("\n--- payment.failed raises dunning, keeps access ---");
   const pf = await send(

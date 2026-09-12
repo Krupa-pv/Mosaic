@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import {
-  ENTITLED_STATUSES,
-  FACILITY_PRODUCT_ID,
+  CANDIDATE_STATUSES,
   accessFor,
+  facilityProductIds,
   tierFor,
 } from "../../../../lib/whop/catalog";
 
@@ -13,12 +13,12 @@ import {
 //   GET https://api.whop.com/api/v1/memberships
 //   Authorization: Bearer <account API key>
 //   account_id    the seller company, a biz_... id. Required with an API key.
-//   product_ids[] restricts the answer to the Nursing Homes product, so a
+//   product_ids[] restricts the answer to the Nursing Homes products, so a
 //                 Family subscription cannot unlock the staff dashboard.
-//   statuses[]    the entitled set from the catalog, which includes
-//                 "completed" (where the free Starter lands, since a
-//                 one-time plan never becomes "active") and "past_due"
-//                 (grace period — access continues while billing is chased).
+//   statuses[]    candidate statuses only. "completed" is entitled on a
+//                 one-time plan but means "ended" on a renewal plan, so the
+//                 real decision runs per membership through accessFor()
+//                 with that membership's plan id.
 //
 // Until the key and account id are set this returns 503 so the client's
 // graceful path runs. An unconfigured gate must not claim a subscription.
@@ -40,9 +40,9 @@ export async function GET() {
     return NextResponse.json({ error: "Whop not configured" }, { status: 503 });
   }
 
-  const params = new URLSearchParams({ account_id: accountId, first: "25" });
-  params.append("product_ids[]", FACILITY_PRODUCT_ID);
-  for (const status of ENTITLED_STATUSES) params.append("statuses[]", status);
+  const params = new URLSearchParams({ account_id: accountId, first: "50" });
+  for (const productId of facilityProductIds()) params.append("product_ids[]", productId);
+  for (const status of CANDIDATE_STATUSES) params.append("statuses[]", status);
 
   try {
     const res = await fetch(`${WHOP_API}/memberships?${params}`, {
@@ -57,23 +57,29 @@ export async function GET() {
     }
 
     const json = (await res.json()) as { data?: WhopMembership[] };
-    const memberships = json.data ?? [];
-    const active = memberships.length > 0;
+    const candidates = json.data ?? [];
+
+    // Whop's status filter cannot express "completed, but only on a
+    // one-time plan", so the decision is made here per membership.
+    const entitled = candidates.filter(
+      (m) => accessFor(m.status, m.plan?.id) !== "revoke",
+    );
+    const active = entitled.length > 0;
 
     // Report the best tier held, so a facility on Growth is not described by
-    // a stale Starter membership that is also still entitled.
+    // a Starter membership that is also still entitled.
     const RANK = { starter: 0, family: 1, basic: 2, growth: 3 } as const;
     let tier: string | undefined;
     let dunning = false;
 
-    for (const m of memberships) {
-      if (accessFor(m.status) === "grace") dunning = true;
+    for (const m of entitled) {
+      if (accessFor(m.status, m.plan?.id) === "grace") dunning = true;
       const t = tierFor(m.plan?.id, m.plan?.metadata?.tier);
       if (t && (!tier || RANK[t] > RANK[tier as keyof typeof RANK])) tier = t;
     }
 
     console.log(
-      `[/api/access] ${memberships.length} entitled facility membership(s) -> active=${active} tier=${tier ?? "?"}${dunning ? " dunning" : ""}`,
+      `[/api/access] ${entitled.length}/${candidates.length} facility membership(s) entitled -> active=${active} tier=${tier ?? "?"}${dunning ? " dunning" : ""}`,
     );
 
     // `active` is what src/lib/api.ts reads. `has_access` is an alias so a

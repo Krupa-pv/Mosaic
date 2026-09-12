@@ -172,7 +172,7 @@ export async function POST(request: Request) {
   // fallback. past_due arrives as an activation-shaped event but must keep
   // access rather than being treated as a fresh grant.
   const whopStatus = body.data?.status ?? (isActivation ? "active" : "canceled");
-  const decision = accessFor(whopStatus);
+  const decision = accessFor(whopStatus, planId);
   const granted = decision !== "revoke";
 
   if (kind === "family") {
