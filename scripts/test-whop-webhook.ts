@@ -7,12 +7,27 @@
 //   npx tsx scripts/test-whop-webhook.ts
 
 import { createHmac, randomUUID } from "node:crypto";
+import { loadEnvLocal } from "../lib/env-local";
+
+// The dev server reads .env.local through Next.js. Without this the script
+// would sign with a different secret than the server verifies with, and
+// every request would come back 401 for a reason that looks like a bug in
+// the handler.
+loadEnvLocal();
 
 const URL_ = process.env.WEBHOOK_URL ?? "http://localhost:3000/api/webhooks/whop";
-const SECRET = process.env.WHOP_WEBHOOK_SECRET ?? "ws_test_secret_for_local_only";
+const SECRET = process.env.WHOP_WEBHOOK_SECRET;
+
+if (!SECRET) {
+  console.error(
+    "Missing WHOP_WEBHOOK_SECRET. Set it in .env.local (keep the ws_ prefix)\n" +
+      "so this script signs with the same secret the server verifies with.",
+  );
+  process.exit(1);
+}
 
 function sign(id: string, timestamp: number, body: string): string {
-  const mac = createHmac("sha256", Buffer.from(SECRET, "utf8"));
+  const mac = createHmac("sha256", Buffer.from(SECRET as string, "utf8"));
   mac.update(`${id}.${timestamp}.${body}`);
   return mac.digest("base64");
 }
@@ -71,6 +86,9 @@ async function main() {
   check("returns 200, not an error", dup.status, 200);
   check("flagged duplicate", dup.json?.duplicate, true);
 
+  // These expect 401. A wrong secret also produces 401, so they would pass
+  // while proving nothing — the valid-signature case above is what rules
+  // that out. Keep it first, and read a failure there before these.
   console.log("\n--- tampered signature ---");
   const bad = await send(activated("mem_should_not_exist"), { corrupt: true });
   check("rejected 401", bad.status, 401);
