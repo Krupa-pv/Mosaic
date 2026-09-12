@@ -3,6 +3,7 @@
 import type { MatchComponents, ResidentMatch, SocialPrescription } from "@shared/types";
 import { findResident } from "@/lib/roster";
 import { initials } from "@/lib/ui";
+import PairSchedule from "./PairSchedule";
 
 const COMPONENT_LABELS: Record<keyof MatchComponents, string> = {
   interests: "Shared interests",
@@ -153,23 +154,22 @@ export default function RecommendationCard({
               </button>
             </div>
           ) : (
-            <div
-              className={`kw-rise mt-7 rounded-xl px-5 py-4 text-[13px] leading-relaxed ${
-                status === "accepted"
-                  ? "bg-accent-soft text-accent-deep"
-                  : "bg-surface text-muted"
-              }`}
-            >
+            <div className="kw-rise mt-7">
               {status === "accepted" ? (
                 <>
-                  <strong className="font-semibold">Scheduled.</strong> Both
-                  residents added to {prescription.event.title},{" "}
-                  {prescription.event.startTime}. Staff will be prompted for a
-                  one-tap outcome rating afterwards — that result feeds back into
-                  future matches.
+                  <div className="rounded-xl bg-accent-soft px-5 py-4 text-[13px] leading-relaxed text-accent-deep">
+                    <strong className="font-semibold">Scheduled.</strong> Staff
+                    will be prompted for a one-tap outcome rating afterwards —
+                    that result feeds back into future matches.
+                  </div>
+                  {a && b && (
+                    <PairSchedule a={a} b={b} eventId={prescription.event.id} />
+                  )}
                 </>
               ) : (
-                <>Declined. Mosaic will suggest a different pairing.</>
+                <div className="rounded-xl bg-surface px-5 py-4 text-[13px] leading-relaxed text-muted">
+                  Declined. Mosaic will suggest a different pairing.
+                </div>
               )}
             </div>
           )}

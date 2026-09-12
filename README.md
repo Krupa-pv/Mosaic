@@ -13,7 +13,13 @@ npm run dev     # http://localhost:3000
 
 Dashboard → Margaret → risk explained → extract care plan + intake →
 merged profile → find a companion → Helen at 91 → Indoor Garden Circle →
-accept. If that runs clean, stop building.
+accept → the activity lands on both residents' weeks. If that runs clean,
+stop building.
+
+The final beat is worth narrating: Margaret's week goes from 1 activity to
+2, while Helen already attends Garden Circle. The intervention is Margaret
+joining Helen's existing routine, not a new event for both — which is why
+it's a low-friction ask of staff.
 
 ## Layout
 
