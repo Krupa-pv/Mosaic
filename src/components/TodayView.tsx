@@ -13,11 +13,11 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { allResidents, findResident } from "@/lib/roster";
-import { CURRENT_STAFF_ID, staffFor } from "@/lib/staff";
+import { CURRENT_STAFF_ID, currentStaff, residentsOf, staffFor } from "@/lib/staff";
 import { completeTask, useTasks } from "@/lib/tasks";
 import { addObservation } from "@/lib/observations";
 import { attendeesFor, dayNameOf, eventsOn } from "@/lib/schedule";
-import { useAllAccepted, useOutcomes } from "@/lib/accepted";
+import { useAllAccepted } from "@/lib/accepted";
 import { events } from "@shared/seed";
 import Avatar from "./ui/Avatar";
 import AvatarStack from "./ui/AvatarStack";
@@ -285,49 +285,37 @@ function MyTasks() {
 
 function Evening({ today }: { today: string }) {
   const accepted = useAllAccepted();
-  const outcomes = useOutcomes();
+  const me = currentStaff();
 
-  // Only prescriptions for activities that actually ran today.
+  // Everyone assigned to this caregiver gets a feedback row — not just
+  // residents who happened to have a prescription today. End of shift is
+  // when you have something to say about all of them, and the residents
+  // who did nothing are exactly the ones worth hearing about.
+  const mine = residentsOf(me.id)
+    .map((id) => findResident(id))
+    .filter((r): r is NonNullable<typeof r> => Boolean(r))
+    .sort((a, b) => b.riskScore - a.riskScore);
+
   const todayIds = new Set(eventsOn(today).map((e) => e.id));
-  const due = accepted.filter((a) => todayIds.has(a.eventId));
-
-  const outcomeOf = (eventId: string, residentId: string) =>
-    outcomes.find((o) => o.eventId === eventId && o.residentId === residentId)
-      ?.outcome;
-
-  if (due.length === 0) {
-    return (
-      <Section icon={Moon} title="Nothing to log yet">
-        <div className="rounded-2xl border border-dashed border-line bg-surface p-7">
-          <p className="max-w-prose text-body leading-relaxed text-ink-soft">
-            Nothing was scheduled for today. Once you accept a pairing, it shows
-            up here at the end of the day for a one-tap outcome — and that
-            result feeds back into future matches.
-          </p>
-          <Link
-            href="/residents"
-            className="mt-4 inline-flex items-center gap-1.5 text-caption font-medium text-accent hover:underline"
-          >
-            Find someone to pair
-            <ArrowRight aria-hidden className="h-3.5 w-3.5" strokeWidth={2} />
-          </Link>
-        </div>
-      </Section>
+  const eventFor = (residentId: string) => {
+    const hit = accepted.find(
+      (a) => a.residentId === residentId && todayIds.has(a.eventId)
     );
-  }
+    return hit ? events.find((e) => e.id === hit.eventId) : undefined;
+  };
 
   return (
-    <Section icon={Moon} title="How did today go?" hint={`${due.length} to log`}>
+    <Section
+      icon={Moon}
+      title={`Your ${mine.length} residents`}
+      hint="one line each is enough"
+    >
       <ul className="space-y-3">
-        {due.map((a) => {
-          const r = findResident(a.residentId);
-          const e = events.find((x) => x.id === a.eventId);
-          if (!r || !e) return null;
-          const current = outcomeOf(a.eventId, a.residentId);
-
+        {mine.map((r) => {
+          const e = eventFor(r.id);
           return (
             <li
-              key={`${a.eventId}-${a.residentId}`}
+              key={r.id}
               className="rounded-2xl border border-line bg-raised p-5"
             >
               <div className="flex flex-wrap items-center gap-3">
@@ -342,23 +330,22 @@ function Evening({ today }: { today: string }) {
                     {r.firstName} {r.lastName}
                   </p>
                   <p className="text-caption text-muted">
-                    {e.title} · {e.startTime}
+                    {e ? `${e.title} · ${e.startTime}` : "Nothing scheduled today"}
                   </p>
                 </div>
+                <Link
+                  href={`/residents/${r.id}/history`}
+                  className="text-caption text-muted transition hover:text-accent"
+                >
+                  History
+                </Link>
                 <RiskBadge level={r.riskLevel} />
               </div>
 
               <OutcomeCapture
-                residentId={a.residentId}
-                eventId={a.eventId}
-                current={current}
-                companionName={
-                  findResident(
-                    due.find(
-                      (x) => x.eventId === a.eventId && x.residentId !== a.residentId
-                    )?.residentId ?? ""
-                  )?.firstName
-                }
+                residentId={r.id}
+                eventId={e?.id ?? "general"}
+                scheduled={Boolean(e)}
               />
             </li>
           );

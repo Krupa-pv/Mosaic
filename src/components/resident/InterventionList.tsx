@@ -12,14 +12,14 @@ import {
   Utensils,
   type LucideIcon,
 } from "lucide-react";
-import type { Resident } from "@shared/types";
+import type { Resident, ResidentProfile } from "@shared/types";
 import {
   interventionsFor,
   type Intervention,
   type InterventionKind,
 } from "@/lib/interventions";
 import { addTask, completeTask, useTasks } from "@/lib/tasks";
-import { addObservation } from "@/lib/observations";
+import { addObservation, useObservations } from "@/lib/observations";
 import { CURRENT_STAFF_ID, staffFor } from "@/lib/staff";
 import SectionHeader from "../ui/SectionHeader";
 
@@ -41,13 +41,17 @@ const ICONS: Record<InterventionKind, LucideIcon> = {
  */
 export default function InterventionList({
   resident,
-  interests = [],
+  profile,
 }: {
   resident: Resident;
-  interests?: string[];
+  profile?: Partial<ResidentProfile>;
 }) {
   const tasks = useTasks({ residentId: resident.id });
-  const options = interventionsFor(resident, interests);
+  const notes = useObservations(resident.id);
+  const options = interventionsFor(resident, {
+    profile,
+    notes: notes.map((n) => ({ text: n.text, sentiment: n.sentiment })),
+  });
   const owner = staffFor(resident.id);
 
   const openTask = (kind: InterventionKind) =>
@@ -60,14 +64,15 @@ export default function InterventionList({
       <SectionHeader
         icon={HeartHandshake}
         title="Ways to help"
-        hint={`${options.length} options${owner ? ` · ${owner.firstName} is assigned` : ""}`}
+        hint={`ranked for ${resident.firstName}${owner ? ` · ${owner.firstName} is assigned` : ""}`}
       />
 
       <ul className="mt-3 space-y-3">
-        {options.map((o) => {
+        {options.map((o, i) => {
           const Icon = ICONS[o.kind];
           const open = openTask(o.kind);
           const done = doneTask(o.kind);
+          const best = i === 0;
 
           return (
             <li
@@ -75,11 +80,18 @@ export default function InterventionList({
               className={`rounded-2xl border p-5 transition ${
                 done
                   ? "border-accent/40 bg-accent-soft/30"
-                  : open
-                    ? "border-accent/50 bg-raised"
-                    : "border-line bg-raised"
+                  : best
+                    ? "border-accent ring-2 ring-accent/15 bg-raised"
+                    : open
+                      ? "border-accent/50 bg-raised"
+                      : "border-line bg-raised"
               }`}
             >
+              {best && (
+                <p className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-accent px-2.5 py-1 text-micro font-semibold tracking-wide text-white uppercase">
+                  Best first step
+                </p>
+              )}
               <div className="flex flex-wrap items-start gap-4">
                 <span
                   aria-hidden
@@ -102,9 +114,18 @@ export default function InterventionList({
                   <p className="mt-2 text-micro text-muted">
                     <span className="text-high">Because:</span> {o.because}
                   </p>
+                  {best && (
+                    <p className="mt-2 rounded-lg bg-accent-soft/60 px-3 py-2 text-micro leading-relaxed text-accent-deep">
+                      <span className="font-semibold">Ranked first:</span>{" "}
+                      {o.rationale}
+                    </p>
+                  )}
                 </div>
 
                 <div className="flex shrink-0 flex-col items-end gap-2">
+                  <span className="font-mono text-caption tabular-nums text-muted">
+                    {o.score}
+                  </span>
                   <span className="text-micro text-faint">{o.effort}</span>
                   <Action
                     intervention={o}

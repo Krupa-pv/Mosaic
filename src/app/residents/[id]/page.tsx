@@ -6,7 +6,7 @@ import { notesFor } from "@/lib/notes";
 import { riskHex, riskTone } from "@/lib/ui";
 import RiskTrajectory from "@/components/RiskTrajectory";
 import NoProfileYet from "@/components/resident/NoProfileYet";
-import InterventionList from "@/components/resident/InterventionList";
+import ResidentInterventions from "@/components/resident/ResidentInterventions";
 
 /** Overview: why this resident is flagged. The rail carries the score,
  *  so this leads with the trajectory and the drivers behind it. */
@@ -62,7 +62,7 @@ export default async function ResidentOverviewPage({
         </div>
       </section>
 
-      <InterventionList resident={resident} />
+      <ResidentInterventions resident={resident} />
 
       {hasNotes ? (
         <Link

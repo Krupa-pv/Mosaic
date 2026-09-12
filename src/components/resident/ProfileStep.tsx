@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, NotebookPen } from "lucide-react";
+import { ArrowRight, FileStack, NotebookPen } from "lucide-react";
 import { useFlowActions, useFlowDocs, useFlowResults } from "./ResidentFlowProvider";
 import { SENTIMENT_LABELS, useObservations } from "@/lib/observations";
 import ProfileCard from "../ProfileCard";
@@ -42,10 +42,13 @@ export default function ProfileStep() {
         </>
       )}
 
+      <SectionHeader
+        icon={FileStack}
+        title="Sources"
+        hint="where this came from"
+        className="mt-8"
+      />
       <SourceStrip
-        // Fold away only once BOTH documents are read — collapsing after
-        // the first would hide the second before it had been used.
-        defaultOpen={!(r.carePlanResult !== null && r.intakeResult !== null)}
         carePlan={{
           title: "Care plan",
           hint: "clinical · upload or paste",

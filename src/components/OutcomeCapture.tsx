@@ -42,15 +42,14 @@ const PROMPTS: Record<Outcome, string[]> = {
 export default function OutcomeCapture({
   residentId,
   eventId,
-  current,
-  companionName,
+  scheduled = true,
 }: {
   residentId: string;
   eventId: string;
-  current?: Outcome;
-  companionName?: string;
+  /** False when nothing was booked — the outcome labels change. */
+  scheduled?: boolean;
 }) {
-  const [outcome, setOutcome] = useState<Outcome | undefined>(current);
+  const [outcome, setOutcome] = useState<Outcome | undefined>();
   const [note, setNote] = useState("");
   const [saved, setSaved] = useState(false);
   const voice = useSpeechRecognition((chunk) =>
@@ -60,7 +59,7 @@ export default function OutcomeCapture({
   function choose(o: Outcome) {
     setOutcome(o);
     setSaved(false);
-    recordOutcome(eventId, residentId, o);
+    if (scheduled) recordOutcome(eventId, residentId, o);
   }
 
   function save() {
@@ -78,7 +77,7 @@ export default function OutcomeCapture({
   return (
     <div className="mt-4">
       <div className="flex flex-wrap gap-2">
-        {OUTCOMES.map((o) => (
+        {OUTCOMES.filter((o) => scheduled || o.key !== "did_not_happen").map((o) => (
           <button
             key={o.key}
             type="button"
@@ -129,9 +128,9 @@ export default function OutcomeCapture({
             onChange={(e) => setNote(e.target.value)}
             rows={2}
             placeholder={
-              companionName
-                ? `Anything worth remembering about them and ${companionName}?`
-                : "Anything worth remembering?"
+              scheduled
+                ? "Anything worth remembering?"
+                : "How were they today? One line is enough."
             }
             className="mt-3 w-full resize-y rounded-lg border border-line-soft bg-raised p-3 text-caption text-ink-soft outline-none transition focus:border-accent/40"
           />

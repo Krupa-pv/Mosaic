@@ -1,103 +1,127 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, FileText, NotebookPen } from "lucide-react";
+import { FileText, NotebookPen, X, type LucideIcon } from "lucide-react";
 import SourcePanel from "./SourcePanel";
 
+type PanelProps = React.ComponentProps<typeof SourcePanel>;
+
 /**
- * The documents behind a profile, folded away once they've been read.
+ * Where the profile came from, as two status rows.
  *
- * A care plan is a wall of clinical prose and an intake note is written
- * once at admission — neither is what staff come to this page for. The
- * profile is the standing artefact; these sit underneath it as "where
- * this came from", and open when something needs updating.
+ * The documents themselves are behind an explicit "Update" — a care
+ * plan is a wall of clinical prose and an intake note is written once at
+ * admission. Neither is what staff come to this page for, and leaving
+ * two textareas on screen made the profile read as a form.
  */
 export default function SourceStrip({
   carePlan,
   intake,
-  defaultOpen,
 }: {
-  carePlan: React.ComponentProps<typeof SourcePanel>;
-  intake: React.ComponentProps<typeof SourcePanel>;
-  /** Open before anything has been extracted — there's nothing else yet. */
-  defaultOpen: boolean;
+  carePlan: PanelProps;
+  intake: PanelProps;
 }) {
-  // Derived, not sticky: once both documents have been read the strip
-  // folds itself away, so you land on the profile rather than on two
-  // walls of clinical prose. A manual toggle overrides it from then on.
-  const [override, setOverride] = useState<boolean | null>(null);
-  const open = override ?? defaultOpen;
+  const [open, setOpen] = useState<"carePlan" | "intake" | null>(null);
 
-  const rows = [
+  const rows: {
+    key: "carePlan" | "intake";
+    icon: LucideIcon;
+    label: string;
+    meta: string;
+    props: PanelProps;
+  }[] = [
     {
+      key: "carePlan",
       icon: FileText,
       label: "Care plan",
-      status: carePlan.done ? "Read" : "Not read yet",
-      note: "Clinical · updated at review",
-      done: carePlan.done,
+      meta: "Clinical · updated at review",
+      props: carePlan,
     },
     {
+      key: "intake",
       icon: NotebookPen,
       label: "Intake note",
-      status: intake.done ? "Read" : "Not read yet",
-      note: "Written once, at admission",
-      done: intake.done,
+      meta: "Written once, at admission",
+      props: intake,
     },
   ];
 
+  const active = rows.find((r) => r.key === open);
+
   return (
-    <div className="mt-6 overflow-hidden rounded-2xl border border-line bg-raised">
-      <button
-        type="button"
-        onClick={() => setOverride(!open)}
-        aria-expanded={open}
-        className="flex w-full items-center gap-4 px-5 py-4 text-left transition hover:bg-surface"
-      >
-        <div className="min-w-0 flex-1">
-          <p className="text-body font-medium text-ink">Source documents</p>
-          <p className="mt-0.5 text-caption text-muted">
-            Where this profile came from — open to update or add more.
-          </p>
-        </div>
-
-        <div className="hidden gap-5 sm:flex">
-          {rows.map((r) => (
-            <span key={r.label} className="flex items-center gap-2">
-              <r.icon
-                aria-hidden
-                className={`h-3.5 w-3.5 ${r.done ? "text-accent" : "text-faint"}`}
-                strokeWidth={1.75}
-              />
-              <span className="text-micro text-muted">
-                {r.label}
-                <span className={r.done ? "text-accent" : "text-faint"}>
-                  {" · "}
-                  {r.status}
-                </span>
-              </span>
+    <>
+      <ul className="mt-3 space-y-2">
+        {rows.map((r) => (
+          <li
+            key={r.key}
+            className="flex flex-wrap items-center gap-4 rounded-xl border border-line bg-raised px-5 py-3.5"
+          >
+            <r.icon
+              aria-hidden
+              className={`h-4 w-4 shrink-0 ${r.props.done ? "text-accent" : "text-faint"}`}
+              strokeWidth={1.75}
+            />
+            <div className="min-w-0 flex-1">
+              <p className="text-body text-ink">{r.label}</p>
+              <p className="text-micro text-muted">{r.meta}</p>
+            </div>
+            <span
+              className={`text-caption ${r.props.done ? "text-accent" : "text-faint"}`}
+            >
+              {r.props.done ? "Read" : "Not read yet"}
             </span>
-          ))}
-        </div>
+            <button
+              type="button"
+              onClick={() => setOpen(r.key)}
+              className="rounded-lg bg-raised px-3.5 py-2 text-caption font-medium text-ink-soft ring-1 ring-inset ring-line transition hover:bg-surface"
+            >
+              {r.props.done ? "Update" : "Add"}
+            </button>
+          </li>
+        ))}
+      </ul>
 
-        <ChevronDown
-          aria-hidden
-          className={`h-4 w-4 shrink-0 text-muted transition ${open ? "rotate-180" : ""}`}
-          strokeWidth={2}
-        />
-      </button>
+      {active && (
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-ink/50 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Update ${active.label}`}
+          onClick={() => setOpen(null)}
+        >
+          <div
+            className="max-h-[88vh] w-full max-w-2xl overflow-auto rounded-2xl bg-paper p-6 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-4 flex items-start gap-4">
+              <div className="min-w-0 flex-1">
+                <h3 className="display text-title text-ink">{active.label}</h3>
+                <p className="mt-1 text-caption text-muted">
+                  {active.key === "carePlan"
+                    ? "Upload or paste the current care plan. Mosaic reads it into the profile — it never overwrites an edit you've made by hand."
+                    : "The admission note. Day-to-day changes belong in daily notes rather than here."}
+                </p>
+              </div>
+              <button
+                type="button"
+                aria-label="Close"
+                onClick={() => setOpen(null)}
+                className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-muted transition hover:bg-line-soft hover:text-ink"
+              >
+                <X aria-hidden className="h-4 w-4" strokeWidth={2} />
+              </button>
+            </div>
 
-      {open && (
-        <div className="border-t border-line-soft bg-surface p-5">
-          <div className="grid gap-4 xl:grid-cols-2">
-            <SourcePanel {...carePlan} />
-            <SourcePanel {...intake} />
+            <SourcePanel
+              {...active.props}
+              onRun={() => {
+                active.props.onRun();
+                setOpen(null);
+              }}
+            />
           </div>
-          <p className="mt-3 text-micro text-muted">
-            An intake note is written once at admission. Day-to-day changes
-            arrive as notes from the end-of-day screen, below.
-          </p>
         </div>
       )}
-    </div>
+    </>
   );
 }

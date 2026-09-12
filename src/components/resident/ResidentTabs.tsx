@@ -20,6 +20,7 @@ export default function ResidentTabs({ residentId }: { residentId: string }) {
     { href: `${base}/profile`, label: "Profile", ready: true },
     { href: `${base}/pair`, label: "Companion", ready: extracted },
     { href: `${base}/schedule`, label: "Schedule", ready: Boolean(match) },
+    { href: `${base}/history`, label: "History", ready: true },
   ];
 
   return (

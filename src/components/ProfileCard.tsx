@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import {
+  BookUser,
   Brain,
   Clock,
   Ear,
@@ -24,6 +25,7 @@ import type {
 } from "@shared/types";
 import { titleCase } from "@/lib/ui";
 import SectionHeader from "./ui/SectionHeader";
+import BackgroundSection from "./resident/BackgroundSection";
 
 // ============================================================
 // Ordered by how staff actually read it, not by where the data came
@@ -132,7 +134,12 @@ export default function ProfileCard({
         </div>
       </Section>
 
-      {/* ---- 2. Social preferences ---- */}
+      {/* ---- 2. History & background ---- */}
+      <Section icon={BookUser} title="History & background" hint="who they were before here">
+        <BackgroundSection residentId={profile.residentId} />
+      </Section>
+
+      {/* ---- 3. Social preferences ---- */}
       <Section icon={Users} title="How they socialize">
         <div className="grid gap-4 sm:grid-cols-2">
           <Field icon={Users} label="Group size" reveal={reveal}>
@@ -216,7 +223,7 @@ export default function ProfileCard({
         )}
       </Section>
 
-      {/* ---- 3. Constraints ---- */}
+      {/* ---- 4. Constraints ---- */}
       <Section
         icon={TriangleAlert}
         title="What to accommodate"
