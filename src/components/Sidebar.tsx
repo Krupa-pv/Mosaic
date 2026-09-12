@@ -12,6 +12,7 @@ const NAV = [
   { href: "/residents", label: "Residents" },
   { href: "/connections", label: "Connections" },
   { href: "/activities", label: "Activities" },
+  { href: "/plan", label: "Week plan" },
 ];
 
 export default function Sidebar() {
