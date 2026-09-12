@@ -2,7 +2,7 @@
 
 import type { MatchComponents, ResidentMatch, SocialPrescription } from "@shared/types";
 import { findResident } from "@/lib/roster";
-import { initials } from "@/lib/ui";
+import { HEX, initials } from "@/lib/ui";
 import PairSchedule from "./PairSchedule";
 
 const COMPONENT_LABELS: Record<keyof MatchComponents, string> = {
@@ -207,13 +207,13 @@ function ScoreRing({ score }: { score: number }) {
   return (
     <div className="relative h-[70px] w-[70px]">
       <svg viewBox="0 0 70 70" className="h-full w-full -rotate-90">
-        <circle cx="35" cy="35" r={r} fill="none" stroke="#e0d9cd" strokeWidth="4" />
+        <circle cx="35" cy="35" r={r} fill="none" stroke={HEX.line} strokeWidth="4" />
         <circle
           cx="35"
           cy="35"
           r={r}
           fill="none"
-          stroke="#1f5c47"
+          stroke={HEX.accent}
           strokeWidth="4"
           strokeLinecap="round"
           strokeDasharray={c}

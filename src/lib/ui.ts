@@ -32,8 +32,20 @@ export function riskTone(level: Resident["riskLevel"]) {
 // SVG strokes can't read Tailwind classes — chart marks need the raw hex.
 // Kept in step with the --color-high/mid/low tokens in globals.css.
 export function riskHex(level: Resident["riskLevel"]) {
-  return level === "high" ? "#a33f28" : level === "moderate" ? "#a87524" : "#4a7355";
+  return level === "high" ? "#c23b1c" : level === "moderate" ? "#c4820a" : "#3f8a5c";
 }
+
+/** Raw token hexes for SVG strokes/fills, kept in step with globals.css. */
+export const HEX = {
+  accent: "#0f6b4f",
+  accentBright: "#16a06f",
+  accentDeep: "#07422f",
+  line: "#ded5c6",
+  lineSoft: "#eae3d7",
+  faint: "#9d9689",
+  high: "#c23b1c",
+  raised: "#ffffff",
+} as const;
 
 export function trendLabel(trend: number) {
   if (trend > 0) return `▲ ${trend} in 3 weeks`;
