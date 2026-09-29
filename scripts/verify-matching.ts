@@ -1,5 +1,5 @@
 // Sanity harness for the deterministic scorer. Run: npm run verify:matching
-// Asserts the demo pair lands where the design doc says it does.
+// Asserts the demo pair lands where the demo expects it to.
 
 import { margaretProfile, helenProfile, robertProfile } from "../seed-data";
 import { rankMatches, scoreMatch, hardFilters } from "../lib/matching/score-match";
